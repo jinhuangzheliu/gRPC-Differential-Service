@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package messageread;
+
+import "message_service.proto";
+
+//service MessageDiffer{
+//  // A simple RPC.
+//  //
+//  // Checks the connect between client - server
+//  rpc GetContect(MsgRequest) returns (MsgReply) {}
+//
+//  // A simple RPC.
+//  //
+//  // Checks the connect between client - server
+//  rpc DiffertTest(log) returns (result) {}
+//}
+//
+//message MsgRequest{
+//  string request = 1;
+//}
+//
+//message MsgReply{
+//  string reply = 1;
+//}
+//
+//message log {
+//  string base = 1;
+//  string test = 2;
+//  string name_of_message_descriptor = 3;
+//  bytes file_descriptor_proto = 4;
+//}
+//
+//message result {
+//  string res = 1;
+//}
