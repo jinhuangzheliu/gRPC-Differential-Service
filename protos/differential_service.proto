@@ -1,0 +1,251 @@
+// The .proto file of the gRPC based Differential service
+// File name: differential_service.proto
+// Author: Jin Huang(jinhuangzheliu@google.com)
+// Reviewers: xihan@google.com, Xuexuan@google.com, and wzong@google.com
+// Last Update: 07/07/2020
+
+syntax = "proto3";
+package differentialservice;
+
+service DifferentialServer{
+  // The differential service support two methods to compare two message
+  // 1) as default or 2) with customization.
+  // To call service methods, user need to create a std::unique_ptr<DifferentialServer::Stub> stub_;
+  // in their channel with the specific server address and port number.
+  // For example,
+  //    class MessageWrite {
+  //      public:
+  //        explicit MessageWrite(const std::chared_ptr<Channel>& channel)
+  //                      : stub_(DifferentialServer::NewStub(channel)) {}
+  //
+  //      private:
+  //        std::unique_ptr<DifferentialServer::Stub> stub_;
+  //
+  //    int main(...) {
+  //        std::string target_str;    // Establish the gRPC channel with the port number.
+  //        target_str = "0.0.0.0:50053";
+
+
+  // Declare a method to check the connect between the client and server.
+  // User use this method to send a query and receive a response from server.
+  // This method was call by the stub of DifferentialServer.
+  // User's query is passed by "message MsgRequest{ ... }" and
+  // Server's response receive from "message MsgReply { ... }"
+  // For example,
+  //    class MessageWrite {
+  //      public:
+  //        std::string foo(...){
+  //          ...
+  //          differentialservice::MsgRequest request;
+  //          request.set_request( ... );
+  //          differentialservice::MsgReply reply;
+  //          Status status = stub_->GetConnect(..., request, &reply);
+  //          ...
+  //        }
+  //      private:
+  //        std::unique_ptr<DifferentialServer::Stub> stub_;
+  //    }
+  rpc GetConnect(MsgRequest) returns (MsgReply) {}
+
+
+  // Declare how to compare two user input messages as default by MessageDifferencer::Compare().
+  // Users have to structure their message as "message log { ...}" defined below this file.
+  // Similar to the previous method this method is called by stub of DifferentialServer and
+  // passed "message log{}" and the differential result will output by "message result{}".
+  // For example,
+  //    class MessageWrite {
+  //      public:
+  //        std::string foo(...){
+  //          ...
+  //          differentialservice::log log_message;
+  //          differentialservice::reslut res;
+  //          Status status = stub_->DefaultDifferentialService( ..., log_message, res);
+  //          ...
+  //        }
+  //      private:
+  //        std::unique_ptr<DifferentialServer::Stub> stub_;
+  //    }
+  rpc DefaultDifferentialService(log) returns (result) {}
+
+
+  // Declare a customize differential service
+  // 1. Add one/more ignore criteria.
+  //    By setting the "ignoreCriteria user_ignore = 5;" in "message log {}",
+  //    user can implement their customized ignore criteria.
+  //    In "message ignoreCriteria{...}" user can select the flag to
+  //    ignore or compare some specific fields. And also can ignore the field
+  //    by regular expression.
+  //
+  // 2. Compare the repeated fields as LIST or SET.
+  //    By setting "repeated repeatedFieldTuple repeated_field_list = 6",
+  //    user can compare the specific repeated filed base-on List or Set.
+  //    In "message repeatedFieldTuple{...}" user can set the treatAsFlag to
+  //    compare the repeated field.
+  //
+  // 3. Compare the repeated fields as Map.
+  //    By setting "repeated mapvalueTuple mapvaluecompare = 7;",
+  //    user can compare the repeated field as a map-value pair.
+  //
+  //
+
+  // 5. Set the fraction and margin to float/double comparison.
+  //    By setting "float_comparison fraction_margin = 8;"
+  //    User could approximate the comparison of float/double number.
+  rpc DifferentialService(log) returns (result) {}
+}
+
+message MsgRequest{
+  string request = 1;
+}
+
+message MsgReply{
+  string reply = 1;
+}
+
+
+message ignoreCriteria{
+  // Defines how to ignore specific fields. Used by message log { ignoreCriteria user_ignore = 5; }
+  // When user_ignore is set, ignoreCriteria will work in two ways:
+  // 1. ignore some of fields by setting flag as FLAG_IGNORE.
+  //    And then, add the fullname of the ignored fields into ignore_fields_list.
+  // 2. compare specific fields by setting flag FLAG_COMPARE.
+  //    And then, add the fullname of the fields into ignore_fields_list.
+  // ignore_fields_list is a repeated element so you can set multiple fields at same time.
+  //
+  // [ATTENTION: if the field is a nested field you have to add its parent field into the ignore_fields_list.]
+  //
+  // In the following sample, the message "company" is the nested in the message "employee".
+  // If you want to only compare the company::address in two employee messages, you have to first add the
+  // xxx.employee.employer and next add the xxx.company.address into the ignore_fields_list. (xxx is the name of package)
+  //
+  // [.proto file]
+  //  message company{
+  //    string name = 1;
+  //    string occupation = 2;
+  //    string address = 3;
+  //  }
+  //  message employee{
+  //    string fullname = 1;
+  //    company employer = 2;
+  //  }
+  //
+  // [c++ codes]
+  //  ignoreCriteria* ignoreCriteria_ptr = log_message->mutable_user_ignore();
+  //  ignoreCriteria_ptr->set_flag( ...FLAG_COMPARE);
+  //  ignoreCriteria_ptr->add_ignore_fields_list("xxx.employee.employer");
+  //  ignoreCriteria_ptr->add_ignore_fields_list("xxx.company.address");
+  enum ignoreFlag{
+    FLAG_IGNORE = 0;
+    FLAG_COMPARE = 1;
+  }
+  ignoreFlag flag = 1;
+
+  // list of the filed name. If nested field using syntax: ParentFieldName.FieldName.
+  repeated string ignore_fields_list = 2;
+  // Ignore by regular expression
+  string regex = 3;
+}
+
+
+message repeatedFieldTuple{
+  // Defines how to treat the repeated field as List or Set.
+  // Used by message log { repeated repeatedFieldTuple repeated_field = 6; }
+  // When the repeated_fields is set, repeatedFieldTuple will work in two ways:
+  // 1. Treat the repeated file as list-based comparison by setting the flag as FLAG_LIST.
+  //    Then, add the name of the repeated field in field_name.
+  // 2. Treat the repeated file as list-based comparison by setting the flag as FLAG_SET.
+  //    Then, add the name of the repeated field in field_name.
+  //
+  // Different with ignoreCriteria, field_name isn't a repeated elements.
+  // You can only set one field in each repeatedFieldTuple. However, we leave the repeated_field
+  // at the "message log" as repeated, you can set multiple repeated fields in message log.
+  enum treatAsFlag{
+    FLAG_LIST = 0;
+    FLAG_SET = 1;
+  }
+  treatAsFlag flag = 1;
+
+  // Set the repeated field name.
+  string field_name = 2;
+}
+
+
+message mapvalueTuple{
+  // Defines how to compare the repeated field as Map-value pair.
+  // user can select one/more specific field/fields as the Map
+  // and remaining fields as the Value to compare two messages.
+  // When "mapvaluecompare = 7" in message log was set the
+  // "name_of_repeated_field" describe the name of repeated field and
+  // the "name_of_sub_field" handle the Map field for the comparison.
+  // We leave the "name_of_sub_field" as repeated that allow the user select
+  // multiple sub-fields as Map.
+  //
+  // e.g. user can select sub-fields "name" and "degree" as the Map to
+  // compare the repeated field 'education' in message employee.
+  //
+  // [.proto file]
+  // message education_info{
+  //   string name = 1;
+  //   string degree = 2;
+  //   string major = 3;
+  //   string address = 4;
+  // }
+  // message employee{
+  //   ...
+  //   repeated education_info education = 6;
+  // }
+  //
+  // [C++ codes]
+  //  differentialservice::mapvalueTuple* mapvalue_ptr = log_message.add_mapvaluecompare();
+  //  mapvalue_ptr->set_name_of_repeated_field("education");
+  //  mapvalue_ptr->add_name_of_sub_field("name");
+  //  mapvalue_ptr->add_name_of_sub_field("degree");
+
+  // name of repeated field
+  string name_of_repeated_field = 1;
+  // Map field for the comparison
+  repeated string name_of_sub_field = 2;
+}
+
+
+message float_comparison{
+  // Defines how to compare the float/double number with fraction and margin.
+  float fraction = 1;
+  float margin = 2;
+}
+
+
+message log {
+  // Defines how to transmit the input messages from client to server.
+  // After structure the input messages, user need serialize these two
+  // message to string and write the string type of message into msg_1 and msg_2.
+  // Because the process on server side will dynamically parse the input messages so
+  // user also need transmit the name of  message descriptor and all file descriptors(proto)
+  // with their dependency to the server.
+  // On the server side, the system will reconstruct the user's message by leveraging
+  // the class DescriptorPool with i) serialized messages, ii) name of descriptor, and
+  // iii) file descriptor and dependency.
+  bytes message_1 = 1;
+  bytes message_2 = 2;
+  string name_of_message_descriptor = 3;
+  repeated bytes file_descriptor_proto = 4;
+
+  // Defines how to ignore the specific field.
+  ignoreCriteria user_ignore = 5;
+
+  // Defines how to compare the repeated field
+  repeated repeatedFieldTuple repeated_field = 6;
+
+  // Map-based compare the repeated_field with one/more field.
+  repeated mapvalueTuple mapvaluecompare = 7;
+
+  // Set the fraction and margin for float/double number comparison.
+  float_comparison fraction_margin = 8;
+}
+
+message result {
+  string res = 1;
+}
+
+
+

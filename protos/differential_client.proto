@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package differential_client;
+
+import "differential_service.proto";
+
+message company{
+  string name = 1;
+  string occupation = 2;
+  string address = 3;
+}
+
+message education_info{
+  string name = 1;
+  string degree = 2;
+  string major = 3;
+  string address = 4;
+}
+
+message dependent_info{
+  repeated string name = 1;
+  repeated int32 age = 2;
+}
+
+message field_set{
+  string exam1 = 1;
+  int32 score1 = 2;
+  string exam2 = 3;
+  float score2 = 4;
+}
+
+message employee{
+  int32 employ_id = 1;
+  string fullname = 2;
+  int32 age = 3;
+  company employer = 4;
+  repeated string areas = 5;
+  repeated education_info education = 6;
+  dependent_info dependents = 7;
+  double floatpoint = 8;
+
+  repeated field_set foo = 9;
+
+  map<string, string> info = 10;
+}
+

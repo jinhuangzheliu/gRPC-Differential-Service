@@ -1,0 +1,5 @@
+syntax = "proto3";
+
+package differential_server;
+
+import "differential_service.proto";
