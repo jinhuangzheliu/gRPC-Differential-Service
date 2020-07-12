@@ -234,7 +234,6 @@ class KeyComparater : public MessageDifferencer::MapKeyComparator {
     if (!key_match){
       return false;
     }
-
     auto* differencer = new MessageDifferencer();
     if( !differencer->Compare(message1, message2) ){
       return false;

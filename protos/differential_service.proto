@@ -114,7 +114,7 @@ message ignoreCriteria{
   //
   // [ATTENTION: if the field is a nested field you have to add its parent field into the ignore_fields_list.]
   //
-  // In the following sample, the message "company" is the nested in the message "employee".
+  // In the following sample, the message "company" is nested in the message "employee".
   // If you want to only compare the company::address in two employee messages, you have to first add the
   // xxx.employee.employer and next add the xxx.company.address into the ignore_fields_list. (xxx is the name of package)
   //
