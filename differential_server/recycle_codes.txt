@@ -1,0 +1,152 @@
+// Deprecated!!!
+class MapKeyCompatratorImpl : public MessageDifferencer::MapKeyComparator {
+ public:
+  MapKeyCompatratorImpl(const Message& message, const Descriptor* descriptor) {
+    map_ptr = new std::unordered_map<std::string, const FieldDescriptor*>;
+    MapKeyCompatratorImpl::MapTraversalFiledDsp(message, descriptor, *map_ptr);
+
+    //    for (std::pair<std::string, const FieldDescriptor*> KeyVal : *map_ptr)
+    //    {
+    //      std::cout << KeyVal.first << " => " << KeyVal.second << std::endl;
+    //    }
+
+    list_ptr = new std::vector<const FieldDescriptor*>;
+    MapKeyCompatratorImpl::ListTraversalFieldDsp(message, descriptor,
+                                                 *list_ptr);
+
+    for (int i = 0; i < (*list_ptr).size(); ++i) {
+      const FieldDescriptor* tmp = (*list_ptr).at(i);
+      std::cout << "Field: " << i << "\t" << tmp->DebugString() << std::endl;
+    }
+  }
+
+  static void MapTraversalFiledDsp(
+      const Message& message, const Descriptor* descriptor,
+      std::unordered_map<std::string, const FieldDescriptor*>& field_dict) {
+    const Reflection* reflection = message.GetReflection();
+
+    if (nullptr == reflection) {
+      std::cout << "Reflection is null" << std::endl;
+      return;
+    }
+
+    if (nullptr == descriptor) {
+      return;
+    }
+
+    std::vector<const FieldDescriptor*> field_list;
+
+    reflection->ListFields(message, &field_list);
+
+    for (size_t i = 0; i < field_list.size(); ++i) {
+      const FieldDescriptor* field_ptr = field_list[i];
+
+      if (field_ptr->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE &&
+          !field_ptr->is_repeated()) {
+        std::string fullname = field_ptr->full_name();
+        field_dict[fullname] = field_ptr;
+        continue;
+      }
+
+      // if CPPTYPE_MESSAGE
+      if (!field_ptr->is_repeated())  // Not Repeated
+      {
+        const Message& cur_msg = reflection->GetMessage(message, field_ptr);
+        std::string fullname = field_ptr->full_name();
+        field_dict[fullname] = field_ptr;
+
+        const Descriptor* sub_dst = field_ptr->message_type();
+        MapTraversalFiledDsp(cur_msg, sub_dst, field_dict);
+      } else {  // if repeated
+        int count = reflection->FieldSize(message, field_ptr);
+        std::string fullname = field_ptr->full_name();
+        field_dict[fullname] = field_ptr;
+        if (field_ptr->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE) {
+          continue;
+        }
+        // repeated and CPPTYPE_MESSAGE
+        for (int j = 0; j < count; ++j) {
+          const Message& cur_msg =
+              reflection->GetRepeatedMessage(message, field_ptr, j);
+          const Descriptor* sub_dst = field_ptr->message_type();
+          MapTraversalFiledDsp(cur_msg, sub_dst, field_dict);
+        }
+      }
+    }
+  }
+
+  static void ListTraversalFieldDsp(
+      const Message& message, const Descriptor* descriptor,
+      std::vector<const FieldDescriptor*>& field_list) {
+    const Reflection* reflection = message.GetReflection();
+    if (nullptr == reflection) {
+      std::cout << "Reflection is null" << std::endl;
+      return;
+    }
+
+    if (descriptor == nullptr) {
+      return;
+    }
+
+    const FieldDescriptor* field_ptr = nullptr;
+
+    std::vector<const FieldDescriptor*> v_field_list;
+
+    reflection->ListFields(message, &v_field_list);
+
+    for (size_t i = 0; i < v_field_list.size(); ++i) {
+      field_ptr = v_field_list[i];
+      if (field_ptr->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE &&
+          !field_ptr->is_repeated()) {
+        field_list.push_back(field_ptr);
+        continue;
+      }
+
+      // CPPTYPE_MESSAGE
+      if (!field_ptr->is_repeated()) {
+        // not repeated
+        const Message& current_msg = reflection->GetMessage(message, field_ptr);
+        field_list.push_back(field_ptr);
+        const Descriptor* sub_dst = field_ptr->message_type();
+        ListTraversalFieldDsp(current_msg, sub_dst, field_list);
+      } else {
+        int count = reflection->FieldSize(message, field_ptr);
+        field_list.push_back(field_ptr);
+        if (field_ptr->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE) {
+          continue;
+        }
+        // repeated and CPPTYPE_MESSAGE
+        for (int j = 0; j < count; ++j) {
+          const Message& current_msg =
+              reflection->GetRepeatedMessage(message, field_ptr, j);
+          const Descriptor* sub_dst = field_ptr->message_type();
+          ListTraversalFieldDsp(current_msg, sub_dst, field_list);
+        }
+      }
+    }
+  }
+
+  //  bool IsMatch(const Message &message1, const Message &message2,
+  //               const std::vector<MessageDifferencer::SpecificField> &) const
+  //               override{
+  //
+  //    bool res = true;
+  //    DefaultFieldComparator field_comparator;
+  //    for (int i = 0; i < (*list_ptr).size(); ++i) {
+  //      const FieldDescriptor* tmp_field = (*list_ptr).at(i);
+  //
+  //      if (tmp_field->cpp_type() != FieldDescriptor::CPPTYPE_MESSAGE &&
+  //          !tmp_field->is_repeated()){
+  //          field_comparator.Compare(message1, message2, tmp_field, -1, -1,
+  //          nullptr);
+  //      }
+  ////      field_comparator.Compare(message1, message2, tmp_field, -1, -1,
+  /// nullptr);
+  //    }
+  //  }
+
+ private:
+  // I know these two is redundant.
+  std::unordered_map<std::string, const FieldDescriptor*>* map_ptr;
+  std::vector<const FieldDescriptor*>* list_ptr;
+};

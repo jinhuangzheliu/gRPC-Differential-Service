@@ -3,13 +3,11 @@
 #include <google/protobuf/descriptor.pb.h>
 #include <google/protobuf/dynamic_message.h>
 #include <google/protobuf/message.h>
-#include <google/protobuf/stubs/strutil.h>
 #include <google/protobuf/util/message_differencer.h>
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
 
-#include <fstream>
 #include <iostream>
 #include <memory>
 #include <regex>
@@ -18,7 +16,6 @@
 #include <unordered_set>
 #include <vector>
 
-#include "differential_server.grpc.pb.h"
 #include "differential_service.grpc.pb.h"
 
 using google::protobuf::Descriptor;
@@ -95,11 +92,15 @@ class whiteListIgnoreCriteria : public MessageDifferencer::IgnoreCriteria {
 
   void add_featureField(const std::string& field) { set_ptr->insert(field); }
 
+  void print(std::unordered_set<std::string> const &s){
+    std::copy(s.begin(), s.end(), std::ostream_iterator<std::string>(std::cout, " "));
+  }
+
   bool IsIgnored(const Message& msg1, const Message& msg2,
                  const FieldDescriptor* field,
                  const std::vector<MessageDifferencer::SpecificField>&
-                     parent_fields) override {
-//    std::cout << field->full_name() << std::endl;
+                     parent_fields) override
+  {
     if (set_ptr->find(field->full_name()) == set_ptr->end()) {
       return true;
     } else {
@@ -362,6 +363,8 @@ class MessageServiceImpl final : public DifferentialServer::Service
      *
      *********************************************************/
 
+    differ_obj.set_report_ignores(false);
+
     if (log_message->has_user_ignore()) {
       const differentialservice::ignoreCriteria& user_ignoreCriteria =
           log_message->user_ignore();
@@ -544,10 +547,15 @@ class MessageServiceImpl final : public DifferentialServer::Service
     // Output string for compare result.
     std::string differRes;
     differ_obj.ReportDifferencesToString(&differRes);
-    differ_obj.Compare(*msg_base, *msg_test);
+    bool diff_flag = differ_obj.Compare(*msg_base, *msg_test);
 
     // Set the compare result and return to the user.
-    resDiff->set_res(differRes);
+    if (diff_flag) {
+      resDiff->set_res("SAME");
+    }
+    else {
+      resDiff->set_res(differRes);
+    }
 
     return Status::OK;
   }

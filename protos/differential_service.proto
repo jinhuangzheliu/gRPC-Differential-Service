@@ -10,12 +10,13 @@ package differentialservice;
 service DifferentialServer{
   // The differential service support two methods to compare two message
   // 1) as default or 2) with customization.
-  // To call service methods, user need to create a std::unique_ptr<DifferentialServer::Stub> stub_;
+
+  // To call service methods, user need to create a "std::unique_ptr<DifferentialServer::Stub> stub_"
   // in their channel with the specific server address and port number.
   // For example,
-  //    class MessageWrite {
+  //    class ServiceClient {
   //      public:
-  //        explicit MessageWrite(const std::chared_ptr<Channel>& channel)
+  //        explicit ServiceClient(const std::chared_ptr<Channel>& channel)
   //                      : stub_(DifferentialServer::NewStub(channel)) {}
   //
   //      private:
@@ -25,21 +26,27 @@ service DifferentialServer{
   //        std::string target_str;    // Establish the gRPC channel with the port number.
   //        target_str = "0.0.0.0:50053";
 
+  //        //Initial the service client instance.
+  //        ServiceClient serviceClient(
+  //        grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
-  // Declare a method to check the connect between the client and server.
-  // User use this method to send a query and receive a response from server.
-  // This method was call by the stub of DifferentialServer.
-  // User's query is passed by "message MsgRequest{ ... }" and
-  // Server's response receive from "message MsgReply { ... }"
+
+  // Declare a method to check the connect between the client and server that send a query and receive a response from server.
+  // This method was call by the stub of DifferentialServer. User's query is passed by "message MsgRequest{ ... }" and
+  // server's response receive from "message MsgReply { ... }"
   // For example,
-  //    class MessageWrite {
+  //    class ServiceClient {
   //      public:
-  //        std::string foo(...){
+  //        std::string GetConnect(const std::string& msg){
   //          ...
-  //          differentialservice::MsgRequest request;
-  //          request.set_request( ... );
-  //          differentialservice::MsgReply reply;
-  //          Status status = stub_->GetConnect(..., request, &reply);
+  //          MsgRequest request;
+  //          request.set_request(msg);
+  //
+  //          MsgReply reply;
+  //
+  //          ClientContext context;
+  //
+  //          Status status = stub_->GetConnect(&context, request, &reply);
   //          ...
   //        }
   //      private:
@@ -53,9 +60,9 @@ service DifferentialServer{
   // Similar to the previous method this method is called by stub of DifferentialServer and
   // passed "message log{}" and the differential result will output by "message result{}".
   // For example,
-  //    class MessageWrite {
+  //    class ServiceClient {
   //      public:
-  //        std::string foo(...){
+  //        std::string DefaultDifferentialService(...){
   //          ...
   //          differentialservice::log log_message;
   //          differentialservice::reslut res;
@@ -86,9 +93,7 @@ service DifferentialServer{
   //    By setting "repeated mapvalueTuple mapvaluecompare = 7;",
   //    user can compare the repeated field as a map-value pair.
   //
-  //
-
-  // 5. Set the fraction and margin to float/double comparison.
+  // 4. Set the fraction and margin to float/double comparison.
   //    By setting "float_comparison fraction_margin = 8;"
   //    User could approximate the comparison of float/double number.
   rpc DifferentialService(log) returns (result) {}
@@ -114,6 +119,12 @@ message ignoreCriteria{
   //
   // [ATTENTION: if the field is a nested field you have to add its parent field into the ignore_fields_list.]
   //
+  // p.s. We supply three methods in the class ServiceClient to help the user set their ignoreCriteria.
+  //      defined in header field ServiceClient.h()
+  //        static void blackListCriteria(differentialservice::log& log_message, std::vector<std::string>& field_list);
+  //        static void whiteListCriteria(differentialservice::log& log_message, std::vector<std::string>& field_list);
+  //        static void RegexCriteria(differentialservice::log* log_message, std::string& regex);
+  //
   // In the following sample, the message "company" is nested in the message "employee".
   // If you want to only compare the company::address in two employee messages, you have to first add the
   // xxx.employee.employer and next add the xxx.company.address into the ignore_fields_list. (xxx is the name of package)
@@ -130,10 +141,16 @@ message ignoreCriteria{
   //  }
   //
   // [c++ codes]
-  //  ignoreCriteria* ignoreCriteria_ptr = log_message->mutable_user_ignore();
-  //  ignoreCriteria_ptr->set_flag( ...FLAG_COMPARE);
-  //  ignoreCriteria_ptr->add_ignore_fields_list("xxx.employee.employer");
-  //  ignoreCriteria_ptr->add_ignore_fields_list("xxx.company.address");
+  //  std::string parent_field_1("differential_client.employee.employer");
+  //  std::string nested_field_1("differential_client.company.name");
+  //
+  //  std::vector<std::string> compare_fields;
+  //  compare_fields.push_back(parent_field_1);
+  //  compare_fields.push_back(nested_field_1);
+  //
+  //  // White list criteria will do the ignore
+  //  ServiceClient::whiteListCriteria(log_message, compare_fields);
+  //
   enum ignoreFlag{
     FLAG_IGNORE = 0;
     FLAG_COMPARE = 1;
@@ -156,9 +173,22 @@ message repeatedFieldTuple{
   // 2. Treat the repeated file as list-based comparison by setting the flag as FLAG_SET.
   //    Then, add the name of the repeated field in field_name.
   //
-  // Different with ignoreCriteria, field_name isn't a repeated elements.
   // You can only set one field in each repeatedFieldTuple. However, we leave the repeated_field
   // at the "message log" as repeated, you can set multiple repeated fields in message log.
+  //
+  // p.s. We supply a method in the class ServiceClient to help the user set their repeated field comparison as List or Set.
+  //      static void treat_repeated_field_list_or_set(differentialservice::log& log_message, int flag, std::string& field_name);
+  //
+  // [.proto file]
+  //  message employee{
+  //      repeated areas = 1;
+  //  }
+  //
+  // [C++ codes]
+  //  // Set the field areas as list
+  //  std::string field_1 = "areas";
+  //  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_1);
+
   enum treatAsFlag{
     FLAG_LIST = 0;
     FLAG_SET = 1;
@@ -183,6 +213,11 @@ message mapvalueTuple{
   // e.g. user can select sub-fields "name" and "degree" as the Map to
   // compare the repeated field 'education' in message employee.
   //
+  // p.s. We supply a method in the class ServiceClient to help the user set their repeated field comparison as MAP.
+  //      static void treat_repeated_field_map(differentialservice::log& log_message,
+  //                                       std::string& field_name,
+  //                                       std::vector<std::string>& sub_field_name);
+  //
   // [.proto file]
   // message education_info{
   //   string name = 1;
@@ -196,10 +231,11 @@ message mapvalueTuple{
   // }
   //
   // [C++ codes]
-  //  differentialservice::mapvalueTuple* mapvalue_ptr = log_message.add_mapvaluecompare();
-  //  mapvalue_ptr->set_name_of_repeated_field("education");
-  //  mapvalue_ptr->add_name_of_sub_field("name");
-  //  mapvalue_ptr->add_name_of_sub_field("degree");
+  //  std::string map_field_name = "education";
+  //  std::vector<std::string> sub_field_list;
+  //  sub_field_list.push_back("name");
+  //  sub_field_list.push_back("degree");
+  //  ServiceClient::treat_repeated_field_map(log_message, map_field_name, sub_field_list);
 
   // name of repeated field
   string name_of_repeated_field = 1;
@@ -210,6 +246,9 @@ message mapvalueTuple{
 
 message float_comparison{
   // Defines how to compare the float/double number with fraction and margin.
+  // p.s. We supply a method in the class ServiceClient to help the user set the fraction and margin
+  //      when compare the float or double value.
+  //      static void setFractionAndMargin(differentialservice::log& log_message, double fraction, double margin);
   float fraction = 1;
   float margin = 2;
 }
@@ -217,14 +256,34 @@ message float_comparison{
 
 message log {
   // Defines how to transmit the input messages from client to server.
-  // After structure the input messages, user need serialize these two
-  // message to string and write the string type of message into msg_1 and msg_2.
-  // Because the process on server side will dynamically parse the input messages so
-  // user also need transmit the name of  message descriptor and all file descriptors(proto)
-  // with their dependency to the server.
-  // On the server side, the system will reconstruct the user's message by leveraging
-  // the class DescriptorPool with i) serialized messages, ii) name of descriptor, and
-  // iii) file descriptor and dependency.
+
+  // After structure the input messages, user need serialize these two message to string and write the serialized messages
+  // into message_1 and message_2.
+  // Because the process on server side will dynamically parse the input messages so user also need transmit the name of
+  // message descriptor and all file descriptors(proto) with their dependency into the "name_of_message_descriptor" and
+  // "file_descriptor_proto".
+  // On the server side, the system will reconstruct the user's message by leveraging the class DescriptorPool with
+  // i) serialized messages, ii) name of descriptor, and iii) file descriptor and dependency.
+  //
+  // p.s. We supply a method in the class ServiceClient to help the user writing the input message into log message.
+  //      After structure the input messages user can leverage this method to write the message into log message.
+  //      This method will automatically get the name of the message descriptor and the file descriptors.
+  //      static void messageWriter(employee* msg_1, employee* msg_2, differentialservice::log* log_msg);
+  // [.proto file]
+  // message employee{ ... }
+  //
+  // [C++ Codes]
+  //  employee message_first;
+  //  employee message_second;
+  //  log log_message;
+  //
+  //  message_first.set_fullname("Jin Huang");
+  //  message_first.set_age(32);
+  //
+  //  message_second.set_fullname("Zhe Liu");
+  //  message_second.set_age(32);
+  //
+  //  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
   bytes message_1 = 1;
   bytes message_2 = 2;
   string name_of_message_descriptor = 3;

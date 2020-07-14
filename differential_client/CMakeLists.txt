@@ -1,11 +1,15 @@
 cmake_minimum_required(VERSION 3.16)
+project(Differential_client)
 
-project(Differential_service)
+set(CMAKE_CXX_STANDARD 14)
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
+set(SOURCE_FILES differential_client.cc)
+add_executable(differential_client_cpp ${SOURCE_FILES})
 
-AUX_SOURCE_DIRECTORY(${CMAKE_CURRENT_BINARY_DIR} DIR_SRCS)
+# Add the libraries
+include_directories(differential_client_lib)
+add_subdirectory(differential_client_lib)
+target_link_libraries(differential_client_cpp Differential_client_lib)
 
-set(FILE_DESCRIPTOR ${DIR_SRCS})
-
-add_executable(differential_client_cpp differential_client.cc)
+# Add the Google Test for unit testing
+add_subdirectory(Google_tests)
