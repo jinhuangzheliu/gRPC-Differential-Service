@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package differential_client;
+package differential_test;
 
 import "differential_service.proto";
 

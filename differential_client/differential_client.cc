@@ -11,35 +11,16 @@
 #include <string>
 
 #include "differential_client_lib/differential_service.grpc.pb.h"
-#include "differential_client_lib/differential_client.grpc.pb.h"
-#include "differential_client_lib/ServiceClient.h"
+#include "differential_client_lib/differential_test.grpc.pb.h"
+#include "ServiceClient.h"
+#include "Client_util.h"
 
-using grpc::Channel;
-using grpc::ClientContext;
-using grpc::Status;
-
-using google::protobuf::Descriptor;
-using google::protobuf::DescriptorPool;
-using google::protobuf::DescriptorProto;
-using google::protobuf::FieldDescriptor;
-using google::protobuf::FieldDescriptorProto;
-using google::protobuf::FileDescriptor;
-using google::protobuf::FileDescriptorProto;
-using google::protobuf::Map;
-using google::protobuf::Message;
-using google::protobuf::MessageFactory;
-
-// using namespace from the differential service .proto file
-using differentialservice::DifferentialServer;
-using differentialservice::MsgRequest;
-using differentialservice::MsgReply;
-
-// using namespace form the differential client .proto file.
-using differential_client::company;
-using differential_client::education_info;
-using differential_client::dependent_info;
-using differential_client::field_set;
-using differential_client::employee;
+// using namespace form the differential test .proto file.
+using differential_test::company;
+using differential_test::education_info;
+using differential_test::dependent_info;
+using differential_test::field_set;
+using differential_test::employee;
 
 
 int main(int argc, char* argv[]) {
@@ -50,23 +31,14 @@ int main(int argc, char* argv[]) {
   target_str = "0.0.0.0:50053";
 
   // Initial the service client instance.
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials())
-      );
+  ServiceClient serviceClient(target_str);
+
 
   /*
-   *  Check the Service Connection
-   */
-  std::string user(" Established");
-  std::string reply = serviceClient.GetConnect(user);
-  std::cout << "Status received: " << reply << std::endl;
-
-  /*
-   *  Implement the Differential Service
+   *  Write two message for testing.
+   *  The .proto file of testing message is located in ../protos/differential_test.proto
    */
   employee message_first;
-  employee message_second;
-  differentialservice::log log_message;
 
   message_first.set_employ_id(01);
   message_first.set_fullname("Jin Huang");
@@ -78,7 +50,7 @@ int main(int argc, char* argv[]) {
   message_first.add_areas("YouTube Ads.");
   message_first.add_areas("Click Ads.");
   message_first.add_areas("Search Ads.");
-  differential_client::dependent_info* dependentInfo_ptr_1 = message_first.mutable_dependents();
+  dependent_info* dependentInfo_ptr_1 = message_first.mutable_dependents();
   dependentInfo_ptr_1->add_name("Jeremy");
   dependentInfo_ptr_1->add_name("Zhe");
   dependentInfo_ptr_1->add_name("Jin");
@@ -92,9 +64,10 @@ int main(int argc, char* argv[]) {
   edu_info_1->set_degree("PhD");
   edu_info_1->set_major("Computer Science");
   edu_info_1->set_address("OH, US");
-
   message_first.set_floatpoint(100.0);
 
+
+  employee message_second;
 
   message_second.set_employ_id(02);
   message_second.set_fullname("Zhe Liu");
@@ -106,7 +79,7 @@ int main(int argc, char* argv[]) {
   message_second.add_areas("YouTube Ads.");
   message_second.add_areas("Search Ads.");
   message_second.add_areas("Click Ads.");
-  differential_client::dependent_info* dependentInfo_ptr_2 = message_second.mutable_dependents();
+  dependent_info* dependentInfo_ptr_2 = message_second.mutable_dependents();
   dependentInfo_ptr_2->add_name("Zhe");
   dependentInfo_ptr_2->add_name("Jeremy");
   dependentInfo_ptr_2->add_name("June");
@@ -120,60 +93,51 @@ int main(int argc, char* argv[]) {
   edu_info_2->set_degree("Master of Science");
   edu_info_2->set_major("Computer Science and Engineering");
   edu_info_2->set_address("OH, US");
-
   message_second.set_floatpoint(109.9);
 
 
-  // Write two input messages into service log.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+  // Generate the Differential Request
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,message_second);
 
-  // compare two messages by default.
-  std::string repeatedRes = serviceClient.DefaultDifferentialService(
-      message_first, message_second, log_message);
-  std::cout << "Message differencer result (Default): \n" << repeatedRes << std::endl;
-
+  // Call Default Differential Service that compare two messages by default.
+  DiffMsgReply repeatedRes = serviceClient.DefaultDifferentialService(diff_request);
+  std::cout << "Message differential result (Default): \n" << repeatedRes.result() << std::endl;
 
 
+  /*
+   *  Try to Customize the differential service.
+   */
   // Add the ignore field list.
   std::vector<std::string> ignore_list;
   ignore_list.push_back("differential_client.employee.employ_id");
   ignore_list.push_back("differential_client.employee.age");
   ignore_list.push_back("differential_client.dependent_info.age");
-  ServiceClient::blackListCriteria(log_message, ignore_list);
+  Client_util::IgnoreFields(diff_request, ignore_list);
 
-
-  // Add the compare field list/
-//  std::vector<std::string> compare_list;
-//  ServiceClient::whiteListCriteria(log_message, compare_list);
 
   // set the repeated field comparison
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_1);
   std::string field_2 = "dependents.name";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_2);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_2);
   std::string field_3 = "dependents.age";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_3);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_3);
 
 
   // Set the map value for repeated filed compare.
   std::string map_field_name = "education";
   std::vector<std::string> sub_field_list;
   sub_field_list.push_back("name");
-//  sub_field_list.push_back("degree");
-  ServiceClient::treat_repeated_field_map(log_message, map_field_name, sub_field_list);
+  sub_field_list.push_back("degree");
+  Client_util::TreatRepeatedFieldAsMap(diff_request, map_field_name, sub_field_list);
 
   // Set the fraction and margin for float number comparison
-  ServiceClient::setFractionAndMargin(log_message, 0.01, 0.0);
+  Client_util::SetFractionAndMargin(diff_request, 0.01, 0.0);
 
-
-
-  // compare two messages by default.
-  std::string repeatedRes1 = serviceClient.DifferentialService(
-      message_first, message_second, log_message);
-  std::cout << "Message differencer result: \n" << repeatedRes1 << std::endl;
-
-
-
+  // Call Differential Service that compare two messages by default.
+  DiffMsgReply repeatedRes1 = serviceClient.DifferentialService(diff_request);
+  std::cout << "Message differential result: \n" << repeatedRes1.result() << std::endl;
+  
   google::protobuf::ShutdownProtobufLibrary();
   return 0;
 }

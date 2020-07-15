@@ -16,7 +16,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "differential_service.grpc.pb.h"
+#include "differential_server_lib/differential_service.grpc.pb.h"
 
 using google::protobuf::Descriptor;
 using google::protobuf::DescriptorPool;
@@ -35,11 +35,12 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-using differentialservice::log;
 using differentialservice::DifferentialServer;
+using differentialservice::DiffMsgRequest;
+using differentialservice::DiffMsgReply;
 using differentialservice::MsgReply;
 using differentialservice::MsgRequest;
-using differentialservice::result;
+
 
 // A helper function for GetFieldDescriptor() function.
 std::vector<std::string> stringSplit(const std::string& string) {
@@ -65,9 +66,9 @@ const FieldDescriptor* GetFieldDescriptor(const Message& message,
   return field;
 }
 
-class blackListIgnoreCriteria : public MessageDifferencer::IgnoreCriteria {
+class FieldIgnoreCriteria : public MessageDifferencer::IgnoreCriteria {
  public:
-  blackListIgnoreCriteria() { set_ptr = new std::unordered_set<std::string>; }
+  FieldIgnoreCriteria() { set_ptr = new std::unordered_set<std::string>; }
 
   void add_featureField(const std::string& field) { set_ptr->insert(field); }
 
@@ -86,15 +87,15 @@ class blackListIgnoreCriteria : public MessageDifferencer::IgnoreCriteria {
   std::unordered_set<std::string>* set_ptr;
 };
 
-class whiteListIgnoreCriteria : public MessageDifferencer::IgnoreCriteria {
+class FieldCompareCriteria : public MessageDifferencer::IgnoreCriteria {
  public:
-  whiteListIgnoreCriteria() { set_ptr = new std::unordered_set<std::string>; }
+  FieldCompareCriteria() { set_ptr = new std::unordered_set<std::string>; }
 
   void add_featureField(const std::string& field) { set_ptr->insert(field); }
 
-  void print(std::unordered_set<std::string> const &s){
-    std::copy(s.begin(), s.end(), std::ostream_iterator<std::string>(std::cout, " "));
-  }
+//  void print(std::unordered_set<std::string> const &s){
+//    std::copy(s.begin(), s.end(), std::ostream_iterator<std::string>(std::cout, " "));
+//  }
 
   bool IsIgnored(const Message& msg1, const Message& msg2,
                  const FieldDescriptor* field,
@@ -252,47 +253,47 @@ class MessageServiceImpl final : public DifferentialServer::Service
 {
   Status GetConnect(ServerContext* context, const MsgRequest* request,
                     MsgReply* reply) override {
-    std::string prefix("Contect has");
+    std::string prefix("1234");
     reply->set_reply(prefix + request->request());
     return Status::OK;
   }
 
   Status DefaultDifferentialService(ServerContext* context,
-                                    const log* log_message,
-                                    result* resDiff) override {
+                                    const DiffMsgRequest* user_request,
+                                    DiffMsgReply* resDiff) override {
     // read the file descriptorProto
-    FileDescriptorProto fdspProto;
-    fdspProto.ParseFromString(log_message->file_descriptor_proto(0));
+    FileDescriptorProto file_descriptor_proto;
+    file_descriptor_proto.ParseFromString(
+        user_request->file_descriptor_proto(0));
 
     // fetch all dependency filedescriptorProto
-    DescriptorPool pool;
-    for (int i = 1; i < log_message->file_descriptor_proto_size(); i++) {
-      FileDescriptorProto tempProto_dep;
-      tempProto_dep.ParseFromString(log_message->file_descriptor_proto(i));
-      pool.BuildFile(tempProto_dep);
+    DescriptorPool descriptorPool;
+    for (int i = 1; i < user_request->file_descriptor_proto_size(); i++) {
+      FileDescriptorProto dependency_Proto;
+      dependency_Proto.ParseFromString(user_request->file_descriptor_proto(i));
+      descriptorPool.BuildFile(dependency_Proto);
     }
 
     // Build the file descriptor.
-    const FileDescriptor* fdsp = pool.BuildFile(fdspProto);
+    const FileDescriptor* file_descriptor = descriptorPool.BuildFile(file_descriptor_proto);
 
     // Read the name of the message descriptor
-    std::string nameofMessageDsp;
-    nameofMessageDsp = log_message->name_of_message_descriptor();
+    std::string name_of_message_descriptor;
+    name_of_message_descriptor = user_request->name_of_message_descriptor();
 
     // Generate the message descriptor by the name
-    const Descriptor* descriptor =
-        fdsp->FindMessageTypeByName(nameofMessageDsp);
+    const Descriptor* descriptor =file_descriptor->FindMessageTypeByName(name_of_message_descriptor);
 
     // Get the the abstract Message instance
-    google::protobuf::DynamicMessageFactory factory(&pool);
+    google::protobuf::DynamicMessageFactory factory(&descriptorPool);
     const Message* msg = factory.GetPrototype(descriptor);
 
     // Parer the base and test message from the log
     Message* msg_base = msg->New();
-    msg_base->ParseFromString(log_message->message_1());
+    msg_base->ParseFromString(user_request->message_1());
 
     Message* msg_test = msg->New();
-    msg_test->ParseFromString(log_message->message_2());
+    msg_test->ParseFromString(user_request->message_2());
 
     // Compare the two message
     MessageDifferencer differ_obj;
@@ -300,54 +301,66 @@ class MessageServiceImpl final : public DifferentialServer::Service
     // Output string for compare result.
     std::string differRes;
     differ_obj.ReportDifferencesToString(&differRes);
-    differ_obj.Compare(*msg_base, *msg_test);
+    bool diff_flag = differ_obj.Compare(*msg_base, *msg_test);
 
     // Set the compare result and return to the user.
-    resDiff->set_res(differRes);
+//    resDiff->set_result(differRes);
+
+    // Set the compare result and return to the user.
+    if (diff_flag) {
+      resDiff->set_result("SAME");
+    }
+    else {
+      resDiff->set_result(differRes);
+    }
+
     return Status::OK;
+
+
   }
 
-  Status DifferentialService(ServerContext* context, const log* log_message,
-                             result* resDiff) override {
+  Status DifferentialService(ServerContext* context, const DiffMsgRequest* user_request,
+                             DiffMsgReply* resDiff) override {
     /****************************************
      *
      * Parse the user messages
      *
      ****************************************/
     // read the file descriptorProto
-    FileDescriptorProto fdspProto;
-    fdspProto.ParseFromString(log_message->file_descriptor_proto(0));
+    FileDescriptorProto file_descriptor_proto;
+    file_descriptor_proto.ParseFromString(user_request->file_descriptor_proto(0));
 
     // fetch all dependency filedescriptorProto
-    DescriptorPool pool;
-    for (int i = 1; i < log_message->file_descriptor_proto_size(); i++) {
-      FileDescriptorProto tempProto_dep;
-      tempProto_dep.ParseFromString(log_message->file_descriptor_proto(i));
-      pool.BuildFile(tempProto_dep);
+    DescriptorPool descriptorPool;
+    for (int i = 1; i < user_request->file_descriptor_proto_size(); i++) {
+      FileDescriptorProto dependency_Proto;
+      dependency_Proto.ParseFromString(user_request->file_descriptor_proto(i));
+      descriptorPool.BuildFile(dependency_Proto);
     }
 
     // Build the file descriptor.
-    const FileDescriptor* fdsp = pool.BuildFile(fdspProto);
+    const FileDescriptor* file_descriptor =
+        descriptorPool.BuildFile(file_descriptor_proto);
 
     // Read the name of the message descriptor
-    std::string nameofMessageDsp;
-    nameofMessageDsp = log_message->name_of_message_descriptor();
+    std::string name_of_message_descriptor;
+    name_of_message_descriptor = user_request->name_of_message_descriptor();
 
     // Generate the message descriptor by the name
     const Descriptor* descriptor =
-        fdsp->FindMessageTypeByName(nameofMessageDsp);
+        file_descriptor->FindMessageTypeByName(name_of_message_descriptor);
 
     // Get the the abstract Message instance
-    google::protobuf::DynamicMessageFactory factory(&pool);
+    google::protobuf::DynamicMessageFactory factory(&descriptorPool);
     const Message* msg = factory.GetPrototype(descriptor);
 
     // Parer the base and test message from the log
     Message* msg_base = msg->New();
-    msg_base->ParseFromString(log_message->message_1());
+    msg_base->ParseFromString(user_request->message_1());
 //    std::cout << "Base Message: \n" << msg_base->DebugString() << std::endl;
 
     Message* msg_test = msg->New();
-    msg_test->ParseFromString(log_message->message_2());
+    msg_test->ParseFromString(user_request->message_2());
 //    std::cout << "Test Message: \n" << msg_test->DebugString() << std::endl;
 
     /************************************************************************
@@ -355,7 +368,7 @@ class MessageServiceImpl final : public DifferentialServer::Service
      * Compare the two message
      *
      ************************************************************************/
-    MessageDifferencer differ_obj;
+    MessageDifferencer differencer;
 
     /*********************************************************
      *
@@ -363,36 +376,42 @@ class MessageServiceImpl final : public DifferentialServer::Service
      *
      *********************************************************/
 
-    differ_obj.set_report_ignores(false);
+    // Don't show the ignore in report.
+    differencer.set_report_ignores(false);
 
-    if (log_message->has_user_ignore()) {
-      const differentialservice::ignoreCriteria& user_ignoreCriteria =
-          log_message->user_ignore();
+    // User implements the ignore criteria.
+    if (user_request->has_user_ignore()) {
+      const differentialservice::IgnoreCriteria& user_ignoreCriteria =
+          user_request->user_ignore();
 
+      // IgnoreCriteria from protobuf MessageDifferencer.
       MessageDifferencer::IgnoreCriteria* ignoreCriteria = nullptr;
 
-      // if ignore field list is set.
+      // loop the fields that set by user.
       if (user_ignoreCriteria.ignore_fields_list_size() != 0) {
-        if (user_ignoreCriteria.flag() ==
-            differentialservice::ignoreCriteria_ignoreFlag_FLAG_IGNORE)
+        // 1) Check the IgnoreFlag set by user. The IgnoreFlag is a binary option.
+        // ...FLAG_IGNORE or ...FLAG_COMPARE
+        if (user_ignoreCriteria.flag() == differentialservice::IgnoreCriteria_IgnoreFlag_FLAG_IGNORE)
         {
-          auto* tmp_criteria = new blackListIgnoreCriteria();
+          auto* tmp_criteria = new FieldIgnoreCriteria();
+          // loop the fields and insert to the tmp_criteria
           for (int i = 0; i < user_ignoreCriteria.ignore_fields_list_size(); ++i) {
             tmp_criteria->add_featureField(user_ignoreCriteria.ignore_fields_list(i));
           }
           ignoreCriteria = tmp_criteria;
         }
         else
+          // IgnoreCriteria_IgnoreFlag_FLAG_COMPARE
         {
-          auto* tmp_criteria = new whiteListIgnoreCriteria();
+          auto* tmp_criteria = new FieldCompareCriteria();
           for (int i = 0; i < user_ignoreCriteria.ignore_fields_list_size(); ++i) {
             tmp_criteria->add_featureField(user_ignoreCriteria.ignore_fields_list(i));
           }
           ignoreCriteria = tmp_criteria;
         }
 
-        // Add the ignoreCriteria if set.
-        differ_obj.AddIgnoreCriteria(ignoreCriteria);
+        // Add the ignoreCriteria to the differencer if set.
+        differencer.AddIgnoreCriteria(ignoreCriteria);
       }
 
       // If the regex is set.
@@ -406,7 +425,7 @@ class MessageServiceImpl final : public DifferentialServer::Service
 
       // Add the ignoreCriteria if set.
       if (criteria_regex != nullptr) {
-        differ_obj.AddIgnoreCriteria(criteria_regex);
+        differencer.AddIgnoreCriteria(criteria_regex);
       }
     }
 
@@ -416,29 +435,35 @@ class MessageServiceImpl final : public DifferentialServer::Service
      *
      *******************************************************/
 
-    differ_obj.set_report_moves(false);
+    // Don't show the more in report
+    differencer.set_report_moves(false);
 
-    // Get the field list if usesr want to list or set comparison
-    if (log_message->repeated_field_size()) {
-      int num = log_message->repeated_field_size();
+    // Check the repeated fields list.
+    if (user_request->repeated_field_size()) {
+      // Get the number of the fields.
+      int num = user_request->repeated_field_size();
       for (int i = 0; i < num; ++i) {
-        const differentialservice::repeatedFieldTuple& fieldTuple =
-            log_message->repeated_field(i);
+        // Get the repeated field Tuple <flag, field_name>
+        // flag is binary option ...FLAG_LIST or ...FLAG_SET
+        const differentialservice::RepeatedFieldTuple& fieldTuple =
+            user_request->repeated_field(i);
         if (fieldTuple.flag() ==
-            differentialservice::repeatedFieldTuple_treatAsFlag_FLAG_LIST)
+            differentialservice::RepeatedFieldTuple_TreatAsFlag_FLAG_LIST)
         {
           const std::string& field_name = fieldTuple.field_name();
           const FieldDescriptor* field_dsp =
               GetFieldDescriptor(*msg_base, field_name);
 
-          differ_obj.TreatAsList(field_dsp);
+          // Tell the differencer treat the field as LIST
+          differencer.TreatAsList(field_dsp);
 
-        } else {  // Binary option another LIST or SET.
+        } else {  // RepeatedFieldTuple_TreatAsFlag_FLAG_LIST
           const std::string& field_name = fieldTuple.field_name();
           const FieldDescriptor* field_dsp =
               GetFieldDescriptor(*msg_base, field_name);
 
-          differ_obj.TreatAsSet(field_dsp);
+          // Tell the differencer treat the field as SET
+          differencer.TreatAsSet(field_dsp);
         }
       }
     }
@@ -448,33 +473,40 @@ class MessageServiceImpl final : public DifferentialServer::Service
      * Check the repeated field comparison methods (MAP)
      *
      *******************************************************/
-    // if set the mapvaluecomapre in log message.
-    if (log_message->mapvaluecompare_size()) {
-      int num = log_message->mapvaluecompare_size();
+    // if set the map_comapre is set by user.
+    if (user_request->map_compare_size() != 0) {
+      int num = user_request->map_compare_size();
       for (int i = 0; i < num; ++i) {
-        const differentialservice::mapvalueTuple& tuple =
-            log_message->mapvaluecompare(i);
+        // Get the MapCompareTuple <name of repeated field, one/more sub field as map>
+        const differentialservice::MapCompareTuple& tuple =
+            user_request->map_compare(i);
 
         // Get the repeated filed descriptor
         const std::string& field_name = tuple.name_of_repeated_field();
+        // get the field descriptor by user input message(*msg), and field name.
+        // "GetFieldDescriptor" is a helper function declared at the top of file.
         const FieldDescriptor* field_dsp = GetFieldDescriptor(*msg, field_name);
 
         // Get the message descriptor of the repeated filed.
         const Descriptor* tmp_dsp = field_dsp->message_type();
 
-        // if the map key is a sigle field.
+        // User could select one/more sub-field as the Map field.
+        // if the map key is a single sub-field.
         if (tuple.name_of_sub_field_size() == 1) {
           const std::string& key_field_name = tuple.name_of_sub_field(0);
           if (tmp_dsp->FindFieldByName(key_field_name) != nullptr) {
             const FieldDescriptor* key_field =
                 tmp_dsp->FindFieldByName(key_field_name);
-            differ_obj.TreatAsMap(field_dsp, key_field);
+            differencer.TreatAsMap(field_dsp, key_field);
           } else {
             // ToDo: Add a error log in messageservice::result
             break;
           }
-        } else {
-          // Loop all key fields and add into the vector key_fields.
+        }
+        // If user set multiple sub-fields as the Map field.
+          // Loop all map fields and add into the vector key_fields.
+        else {
+
           auto* key_fields = new std::vector<const FieldDescriptor*>;
           int key_num = tuple.name_of_sub_field_size();
           for (int j = 0; j < key_num; ++j) {
@@ -488,7 +520,9 @@ class MessageServiceImpl final : public DifferentialServer::Service
               break;
             }
           }
-          differ_obj.TreatAsMapWithMultipleFieldsAsKey(field_dsp, *key_fields);
+
+          // Tell the differencer how to treat the map field.
+          differencer.TreatAsMapWithMultipleFieldsAsKey(field_dsp, *key_fields);
         }
       }
     }
@@ -499,9 +533,9 @@ class MessageServiceImpl final : public DifferentialServer::Service
      *
      *******************************************************/
     // if float_comparison is set
-    if (log_message->has_fraction_margin()) {
-      const differentialservice::float_comparison& fraction_Margin =
-          log_message->fraction_margin();
+    if (user_request->has_fraction_margin()) {
+      const differentialservice::FloatNumComparison& fraction_Margin =
+          user_request->fraction_margin();
 
       double fraction = fraction_Margin.fraction();
       double margin = fraction_Margin.margin();
@@ -514,7 +548,7 @@ class MessageServiceImpl final : public DifferentialServer::Service
       fieldComparator->SetDefaultFractionAndMargin(fraction, margin);
 
       // Add the field comparator to the differencer.
-      differ_obj.set_field_comparator(fieldComparator);
+      differencer.set_field_comparator(fieldComparator);
     }
 
     /*
@@ -546,15 +580,15 @@ class MessageServiceImpl final : public DifferentialServer::Service
      *******************************************************/
     // Output string for compare result.
     std::string differRes;
-    differ_obj.ReportDifferencesToString(&differRes);
-    bool diff_flag = differ_obj.Compare(*msg_base, *msg_test);
+    differencer.ReportDifferencesToString(&differRes);
+    bool diff_flag = differencer.Compare(*msg_base, *msg_test);
 
     // Set the compare result and return to the user.
     if (diff_flag) {
-      resDiff->set_res("SAME");
+      resDiff->set_result("SAME");
     }
     else {
-      resDiff->set_res(differRes);
+      resDiff->set_result(differRes);
     }
 
     return Status::OK;
