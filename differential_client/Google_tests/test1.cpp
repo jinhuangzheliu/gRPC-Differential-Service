@@ -64,6 +64,11 @@ class DifferentialTestEnvironment :public testing::Environment {
 
 namespace google {
 
+/*
+ * In this Unit Test, The .proto field differential_test.proto was used to generate
+ * the input message. (Link: https://github.com/jinhuangzheliu/gRPC-Differential-Service/blob/master/protos/differential_test.proto)
+ */
+
 // Test 1: Test the default differential service.
 TEST(Differential_unit, default_diff_1) {
   // Generate two message by message type employee(defined in differential_test.proto)
@@ -88,11 +93,13 @@ TEST(Differential_unit, default_diff_1) {
   // Casting to char* for unit test.
   const char* c_test_res = test_res.c_str();
 
-  // Only fullname is differenti
+  // Only fullname is different
   const char* except_res = "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
 }
+
+
 
 // Test 2: Test the nested field
 TEST(Differential_unit, default_diff_2) {
@@ -123,12 +130,14 @@ TEST(Differential_unit, default_diff_2) {
   // Casting to char* for unit test.
   const char* c_test_res = test_res.c_str();
 
-  // Only fullname is differenti
+  // Only name and occupation are different
   const char* except_res = "modified: employer.name: \"Google Inc.\" -> \"Alphabet Inc.\"\n"
       "modified: employer.occupation: \"Intern\" -> \"Software Engineer\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
 }
+
+
 
 // Test 3: Test the single field ignore.
 TEST(Differential_unit, ignore_1) {
@@ -151,8 +160,6 @@ TEST(Differential_unit, ignore_1) {
   fields.push_back(field_1);
   Client_util::IgnoreFields(diff_request, fields);
 
-  std::cout << diff_request.user_ignore().ignore_fields_list(0) << std::endl;
-
   // Receive the differential service reply.
   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
@@ -162,7 +169,7 @@ TEST(Differential_unit, ignore_1) {
   // Casting to char* for unit test.
   const char* c_test_res = test_res.c_str();
 
-  // the only different field was ignored so return is same.
+  // the fullname field was ignored so return is same.
   const char* except_res = "SAME";
 
   EXPECT_STREQ(c_test_res, except_res);
@@ -198,7 +205,6 @@ TEST(Differential_unit, ignore_2) {
   // Add the ignore field to the diff request
   Client_util::IgnoreFields(diff_request, fields);
 
-  std::cout << diff_request.user_ignore().ignore_fields_list(0) << std::endl;
 
   // Receive the differential service reply.
   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
@@ -209,7 +215,7 @@ TEST(Differential_unit, ignore_2) {
   // Casting to char* for unit test.
   const char* c_test_res = test_res.c_str();
 
-  // the only different field was ignored so return is same.
+  // fullname and employ_id were ignored but age is different
   const char* except_res = "modified: age: 39 -> 32\n";
 
   EXPECT_STREQ(c_test_res, except_res);
@@ -284,6 +290,8 @@ TEST(Differential_unit, ignore_3) {
   const char* c_test_res = test_res.c_str();
 
   // ******************** Prospective result **********************
+  // Test the nested field ignore Criteria. The different between the nested fields
+  // are ignored so only the different in age should be presented.
   const char* except_res = "modified: age: 39 -> 32\n";
 
   EXPECT_STREQ(c_test_res, except_res);
@@ -345,6 +353,8 @@ TEST(Differential_unit, ignore_4) {
   const char* c_test_res = test_res.c_str();
 
   // ******************** Prospective result **********************
+  // Test if the ignore is empty.
+
   const char* except_res = "modified: employ_id: 1 -> 2\n"
                            "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n"
                            "modified: age: 39 -> 32\n"
@@ -424,6 +434,7 @@ TEST(Differential_unit, ignore_5) {
   const char* c_test_res = test_res.c_str();
 
   // ******************** Prospective result **********************
+  // Test all fields are ignored so result should be same.
   const char* except_res = "SAME";
 
   EXPECT_STREQ(c_test_res, except_res);
@@ -484,6 +495,7 @@ TEST(Differential_unit, compare_1){
   const char* c_test_res = test_res.c_str();
 
   // ******************** Prospective result **********************
+  // Test only compare one field during the differential service
   const char* except_res = "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
@@ -547,6 +559,7 @@ TEST(Differential_unit, compare_2){
   const char* c_test_res = test_res.c_str();
 
   // ******************** Prospective result **********************
+  // In this test we only compare these three fields
   const char* except_res = "modified: employ_id: 1 -> 2\n"
                            "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n"
                            "modified: age: 39 -> 32\n";
@@ -611,6 +624,7 @@ TEST(Differential_unit, compare_3){
   const char* c_test_res = test_res.c_str();
 
   // ******************** Prospective result **********************
+  // In this test case, we want to test the nested fields comparison
   const char* except_res = "modified: employer.name: \"Google Inc.\" -> \"Alphabet Inc.\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
@@ -677,6 +691,7 @@ TEST(Differential_unit, compare_4){
   const char* c_test_res = test_res.c_str();
 
   // ******************** Prospective result **********************
+  // Test multiple fields again.
   const char* except_res = "modified: employer.name: \"Google Inc.\" -> \"Alphabet Inc.\"\n"
                            "modified: employer.occupation: \"Software Engineer\" -> \"Research Scientist\"\n";
 
@@ -685,8 +700,7 @@ TEST(Differential_unit, compare_4){
 
 
 // Test 12: Test compare no field in message. If the user want to compare nothing
-// (leave the compare fields blank), our service will compare every fields in
-// their message.
+// (leave the compare fields blank), our service will compare all fields in the message.
 TEST(Differential_unit, compare_5){
   // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
@@ -735,6 +749,7 @@ TEST(Differential_unit, compare_5){
   const char* c_test_res = test_res.c_str();
 
   // ******************** Prospective result **********************
+  // Compare all fields that user write
   const char* except_res = "modified: employ_id: 1 -> 2\n"
                            "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n"
                            "modified: age: 39 -> 32\n"
@@ -744,7 +759,177 @@ TEST(Differential_unit, compare_5){
   EXPECT_STREQ(c_test_res, except_res);
 }
 
-// Test 13: Test the repeated field treat as LIST.
+
+// Test 13:: Test the regular expression for ignoring the fields of message.
+TEST(Differential_unit, regex_1){
+  // Generate two message by message type employee(defined in differential_test.proto)
+  employee message_first;
+  employee message_second;
+
+  // ******************** write two messages **********************
+
+  message_first.mutable_employer()->set_name("Google Inc.");
+  message_first.mutable_employer()->set_occupation("Software Engineer");
+  message_first.mutable_employer()->set_address("CA, US");
+
+  education_info* edu_info_1 = message_first.add_education();
+  edu_info_1->set_name("University of Florida");
+  edu_info_1->set_degree("PhD");
+  edu_info_1->set_major("Computer Science");
+  edu_info_1->set_address("FL, US");
+
+  // Set the message 2 by the following stuff.
+  message_second.mutable_employer()->set_name("Google Inc.");
+  message_second.mutable_employer()->set_occupation("Software Engineer");
+  message_second.mutable_employer()->set_address("NY, US");
+
+  education_info* edu_info_2 = message_second.add_education();
+  edu_info_2->set_name("Wright State University");
+  edu_info_2->set_degree("PhD");
+  edu_info_2->set_major("Computer Science");
+  edu_info_2->set_address("OH, US");
+
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
+
+  //******************** Test Content ****************************************
+  std::string regex(".*ress$");
+  Client_util::RegexCriteria(diff_request, regex);
+
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
+
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  // Any different in suffix "ress" will be ignore.
+  const char* except_res = "modified: education[0].name: \"University of Florida\" -> \"Wright State University\"\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
+}
+
+// Test 14: Test the regular expression for ignoring the fields of message.
+TEST(Differential_unit, regex_2){
+  // Generate two message by message type employee(defined in differential_test.proto)
+  employee message_first;
+  employee message_second;
+
+  // ******************** write two messages **********************
+
+  message_first.mutable_employer()->set_name("Google Inc.");
+  message_first.mutable_employer()->set_occupation("Software Engineer");
+  message_first.mutable_employer()->set_address("CA, US");
+
+  education_info* edu_info_1 = message_first.add_education();
+  edu_info_1->set_name("University of Florida");
+  edu_info_1->set_degree("PhD");
+  edu_info_1->set_major("Computer Science");
+  edu_info_1->set_address("FL, US");
+
+  // Set the message 2 by the following stuff.
+  message_second.mutable_employer()->set_name("Google Inc.");
+  message_second.mutable_employer()->set_occupation("Software Engineer");
+  message_second.mutable_employer()->set_address("NY, US");
+
+  education_info* edu_info_2 = message_second.add_education();
+  edu_info_2->set_name("Wright State University");
+  edu_info_2->set_degree("PhD");
+  edu_info_2->set_major("Computer Science");
+  edu_info_2->set_address("OH, US");
+
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
+
+  //******************** Test Content ****************************************
+  std::string regex(".*ame$");
+  Client_util::RegexCriteria(diff_request, regex);
+
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
+
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  // Any different in suffix "ame" will be ignore so the different in address should be presented.
+  const char* except_res = "modified: employer.address: \"CA, US\" -> \"NY, US\"\n"
+      "modified: education[0].address: \"FL, US\" -> \"OH, US\"\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
+}
+
+// Test 15: Test the regular expression for ignoring the fields of message.
+TEST(Differential_unit, regex_3){
+  // Generate two message by message type employee(defined in differential_test.proto)
+  employee message_first;
+  employee message_second;
+
+  // ******************** write two messages **********************
+  message_first.set_fullname("Jin Huang");
+  message_first.set_age(32);
+
+  message_first.mutable_employer()->set_name("Google Inc.");
+  message_first.mutable_employer()->set_occupation("Software Engineer");
+  message_first.mutable_employer()->set_address("CA, US");
+
+  education_info* edu_info_1 = message_first.add_education();
+  edu_info_1->set_name("University of Florida");
+  edu_info_1->set_degree("PhD");
+  edu_info_1->set_major("Computer Science");
+  edu_info_1->set_address("FL, US");
+
+  // Set the message 2 by the following stuff.
+  message_second.set_fullname("Zhe Liu");
+  message_second.set_age(29);
+
+  message_second.mutable_employer()->set_name("Alphabet Inc.");
+  message_second.mutable_employer()->set_occupation("Software Engineer");
+  message_second.mutable_employer()->set_address("NY, US");
+
+  education_info* edu_info_2 = message_second.add_education();
+  edu_info_2->set_name("Wright State University");
+  edu_info_2->set_degree("PhD");
+  edu_info_2->set_major("Computer Science");
+  edu_info_2->set_address("OH, US");
+
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
+
+  //******************** Test Content ****************************************
+  std::string regex(".*ame$");
+  Client_util::RegexCriteria(diff_request, regex);
+
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
+
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  // Any different in suffix "ame" will be ignore.
+  // So the different between age, employer address, and education address should be presented.
+  const char* except_res = "modified: age: 32 -> 29\n"
+      "modified: employer.address: \"CA, US\" -> \"NY, US\"\n"
+      "modified: education[0].address: \"FL, US\" -> \"OH, US\"\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
+}
+
+
+// Test 16: Test the repeated field treat as LIST.
 TEST(Differential_unit, repeated_list_1){
   // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
@@ -783,12 +968,13 @@ TEST(Differential_unit, repeated_list_1){
   const char* c_test_res = test_res.c_str();
 
   // ******************** Prospective result **********************
+  // Compare area as List so it's should same.
   const char* except_res = "SAME";
 
   EXPECT_STREQ(c_test_res, except_res);
 }
 
-// Test 14: Test the repeated field treat as LIST.
+// Test 17: Test the repeated field treat as LIST.
 TEST(Differential_unit, repeated_list_2){
   // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
@@ -804,7 +990,7 @@ TEST(Differential_unit, repeated_list_2){
 
   message_second.add_areas("Google Ads.");
   message_second.add_areas("YouTube Ads.");
-  message_second.add_areas("Click Ads.");
+  message_second.add_areas("Click Ads."); // different
   message_second.add_areas("Search Ads.");
 
   // ***************** Generate the differential message request ***************
@@ -814,7 +1000,7 @@ TEST(Differential_unit, repeated_list_2){
   //******************** Test Content ****************************************
   // Set the field areas as list
   std::string field_1 = "areas";
-  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_1);
 
 
   // ********************** Differential Service **********************
@@ -827,13 +1013,79 @@ TEST(Differential_unit, repeated_list_2){
   const char* c_test_res = test_res.c_str();
 
   // ******************** Prospective result **********************
+  // compare as list so present the differential
+  const char* except_res = "modified: areas[2]: \"Search Ads.\" -> \"Click Ads.\"\n"
+      "modified: areas[3]: \"Click Ads.\" -> \"Search Ads.\"\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
+}
+
+// Test 18: Test a nested repeated field treat as LIST.
+TEST(Differential_unit, repeated_list_3){
+  // Generate two message by message type employee(defined in differential_test.proto)
+  employee message_first;
+  employee message_second;
+
+  // ******************** write two messages **********************
+  // Write two message with same value and same order.
+  message_first.add_areas("Google Ads.");
+  message_first.add_areas("YouTube Ads.");
+  message_first.add_areas("Search Ads.");
+  message_first.add_areas("Click Ads.");
+
+  message_second.add_areas("Google Ads.");
+  message_second.add_areas("YouTube Ads.");
+  message_second.add_areas("Search Ads.");
+  message_second.add_areas("Click Ads.");
+
+  // Write the nested field for two messages.
+  differential_test::dependent_info* dependentInfo_ptr_1 =
+      message_first.mutable_dependents();
+  dependentInfo_ptr_1->add_name("Jeremy");
+  dependentInfo_ptr_1->add_name("Zhe");
+  dependentInfo_ptr_1->add_name("Jin");
+  dependentInfo_ptr_1->add_name("June");
+
+  differential_test::dependent_info* dependentInfo_ptr_2 =
+      message_second.mutable_dependents();
+
+  dependentInfo_ptr_2->add_name("Jeremy");
+  dependentInfo_ptr_2->add_name("Zhe");
+  dependentInfo_ptr_2->add_name("Jin");
+  dependentInfo_ptr_2->add_name("June");
+
+
+
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
+
+  //******************** Test Content ****************************************
+  // Set the field areas as list
+  std::string field_1 = "areas";
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_1);
+  std::string field_2 = "dependents.name";
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_2);
+
+
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
+
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  // should same.
   const char* except_res = "SAME";
 
   EXPECT_STREQ(c_test_res, except_res);
 }
 
-// Test 15: Test a nested repeated field treat as LIST.
-TEST(Differential_unit, repeated_list_3){
+// Test 18: Test a nested repeated field treat as LIST.
+TEST(Differential_unit, repeated_list_4){
   // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
@@ -889,6 +1141,7 @@ TEST(Differential_unit, repeated_list_3){
   const char* c_test_res = test_res.c_str();
 
   // ******************** Prospective result **********************
+  // should same.
   const char* except_res = "modified: dependents.name[0]: \"Jeremy\" -> \"Zhe\"\n"
                            "modified: dependents.name[1]: \"Zhe\" -> \"Jeremy\"\n"
                            "modified: dependents.name[2]: \"Jin\" -> \"June\"\n"
@@ -898,7 +1151,7 @@ TEST(Differential_unit, repeated_list_3){
 }
 
 // Test 16: Test multiple nested repeated fields treat as LIST.
-TEST(Differential_unit, repeated_list_4){
+TEST(Differential_unit, repeated_list_5){
   // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
@@ -977,7 +1230,7 @@ TEST(Differential_unit, repeated_list_4){
 }
 
 // Test 17: Test multiple nested repeated fields treat as LIST.
-TEST(Differential_unit, repeated_list_5){
+TEST(Differential_unit, repeated_list_6){
   // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
@@ -1051,7 +1304,7 @@ TEST(Differential_unit, repeated_list_5){
 }
 
 // Test 18: Test the repeated field treat as LIST. deleted element.
-TEST(Differential_unit, repeated_list_6){
+TEST(Differential_unit, repeated_list_7){
   // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
@@ -1094,7 +1347,7 @@ TEST(Differential_unit, repeated_list_6){
 }
 
 // Test 19: Test the repeated field treat as LIST. add element.
-TEST(Differential_unit, repeated_list_7){
+TEST(Differential_unit, repeated_list_8){
   employee message_first;
   employee message_second;
    
