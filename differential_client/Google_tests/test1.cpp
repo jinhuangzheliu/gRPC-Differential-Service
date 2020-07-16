@@ -16,8 +16,10 @@
 
 #include "gtest/gtest.h"
 #include "differential_service.grpc.pb.h"
-#include "differential_client.grpc.pb.h"
-#include "ServiceClient.h"
+#include "differential_test.grpc.pb.h"
+#include "../ServiceClient.h"
+#include "../Client_util.h"
+
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -37,107 +39,143 @@ using google::protobuf::MessageFactory;
 using differentialservice::DifferentialServer;
 using differentialservice::MsgRequest;
 using differentialservice::MsgReply;
-using differentialservice::log;
+using differentialservice::DiffMsgRequest;
+using differentialservice::DiffMsgReply;
 
-using differential_client::company;
-using differential_client::education_info;
-using differential_client::dependent_info;
-using differential_client::field_set;
-using differential_client::employee;
+using differential_test::company;
+using differential_test::education_info;
+using differential_test::dependent_info;
+using differential_test::field_set;
+using differential_test::employee;
+
+namespace {
+ServiceClient* TestStub_;
+}
+
+// Create the client stub of the differential service.
+class DifferentialTestEnvironment :public testing::Environment {
+ public:
+  explicit DifferentialTestEnvironment(){
+    std::string target_str = "0.0.0.0:50053";
+
+    TestStub_ = new ServiceClient(target_str);
+  }
+};
 
 namespace google {
 
-// Test 1: Check the connect between the client and server.
-TEST(Differential_unit, Connect) {
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
-  std::string user(" Established");
-  std::string reply = serviceClient.GetConnect(user);
-
-  EXPECT_EQ(reply, "Contect has Established");
-}
-
-// Test 2: Test the default differential service.
-TEST(Differential_unit, default_diff) {
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+// Test 1: Test the default differential service.
+TEST(Differential_unit, default_diff_1) {
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
-
+  // write two messages
   message_first.set_fullname("Jin Huang");
   message_first.set_age(32);
 
   message_second.set_fullname("Zhe Liu");
   message_second.set_age(32);
 
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+  // Generate the differential message request
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
+  // Receive the differential service reply.
+  DiffMsgReply diff_reply = TestStub_->DefaultDifferentialService(diff_request);
 
-  std::string res = serviceClient.DefaultDifferentialService(
-      message_first, message_second, log_message);
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
 
-  const char* c_res = res.c_str();
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
-  const char* test_res = "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n";
+  // Only fullname is differenti
+  const char* except_res = "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
+}
+
+// Test 2: Test the nested field
+TEST(Differential_unit, default_diff_2) {
+  // Generate two message by message type employee(defined in differential_test.proto)
+  employee message_first;
+  employee message_second;
+
+  // write two messages
+  company* company_ptr_1 = message_first.mutable_employer();
+  company_ptr_1->set_name("Google Inc.");
+  company_ptr_1->set_occupation("Intern");
+  company_ptr_1->set_address("CA, U.S.");
+
+  company* company_ptr_2 = message_second.mutable_employer();
+  company_ptr_2->set_name("Alphabet Inc.");
+  company_ptr_2->set_occupation("Software Engineer");
+  company_ptr_2->set_address("CA, U.S.");
+
+  // Generate the differential message request
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
+  // Receive the differential service reply.
+  DiffMsgReply diff_reply = TestStub_->DefaultDifferentialService(diff_request);
+
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // Only fullname is differenti
+  const char* except_res = "modified: employer.name: \"Google Inc.\" -> \"Alphabet Inc.\"\n"
+      "modified: employer.occupation: \"Intern\" -> \"Software Engineer\"\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 3: Test the single field ignore.
 TEST(Differential_unit, ignore_1) {
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
-
-  message_first.set_fullname("Jin Huang");
+  // write two messages
+    message_first.set_fullname("Jin Huang");
   message_first.set_age(32);
 
   message_second.set_fullname("Zhe Liu");
   message_second.set_age(32);
 
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+  // Generate the differential message request
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   std::vector<std::string> fields;
-  std::string field_1("differential_client.employee.fullname");
+  std::string field_1("differential_test.employee.fullname");
   fields.push_back(field_1);
-  ServiceClient::blackListCriteria(log_message, fields);
+  Client_util::IgnoreFields(diff_request, fields);
 
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+  std::cout << diff_request.user_ignore().ignore_fields_list(0) << std::endl;
 
-  const char* c_res = res.c_str();
+  // Receive the differential service reply.
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* test_res = "SAME";
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
 
-  EXPECT_STREQ(c_res, test_res);
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // the only different field was ignored so return is same.
+  const char* except_res = "SAME";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
+
+
 
 // Test 4: Test the multiple fields ignore
 TEST(Differential_unit, ignore_2) {
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
-
+  // write two messages
   message_first.set_employ_id(001);
   message_first.set_fullname("Jin Huang");
   message_first.set_age(39);
@@ -146,38 +184,47 @@ TEST(Differential_unit, ignore_2) {
   message_second.set_fullname("Zhe Liu");
   message_second.set_age(32);
 
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+  // Generate the differential message request
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   std::vector<std::string> fields;
-  std::string field_1("differential_client.employee.fullname");
-  std::string field_2("differential_client.employee.employ_id");
+  std::string field_1("differential_test.employee.fullname");
+  std::string field_2("differential_test.employee.employ_id");
 
   fields.push_back(field_1);
   fields.push_back(field_2);
 
-  ServiceClient::blackListCriteria(log_message, fields);
+  // Add the ignore field to the diff request
+  Client_util::IgnoreFields(diff_request, fields);
 
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+  std::cout << diff_request.user_ignore().ignore_fields_list(0) << std::endl;
 
-  const char* c_res = res.c_str();
+  // Receive the differential service reply.
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* test_res = "modified: age: 39 -> 32\n";
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
 
-  EXPECT_STREQ(c_res, test_res);
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // the only different field was ignored so return is same.
+  const char* except_res = "modified: age: 39 -> 32\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
+
+
 
 // Test 5: Test the multiple fields ignore include the nested field.
 TEST(Differential_unit, ignore_3) {
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
+
+  // ******************** write two messages **********************
+
 
   // Set the message 1 by following stuff.
   message_first.set_employ_id(001);
@@ -197,16 +244,22 @@ TEST(Differential_unit, ignore_3) {
   message_second.mutable_employer()->set_occupation("Research Scientist");
   message_second.mutable_employer()->set_address("CA, US");
 
-  // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+
+
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
+
+  //******************** Test Content ****************************************
+
 
   // Add the ignore fields. we add two more field nested under the message employee.
   std::vector<std::string> ignore_fields;
-  std::string field_1("differential_client.employee.fullname");
-  std::string field_2("differential_client.employee.employ_id");
+  std::string field_1("differential_test.employee.fullname");
+  std::string field_2("differential_test.employee.employ_id");
 
-  std::string nested_field_1("differential_client.company.name");
-  std::string nested_field_2("differential_client.company.occupation");
+  std::string nested_field_1("differential_test.company.name");
+  std::string nested_field_2("differential_test.company.occupation");
 
   // push the fields
   ignore_fields.push_back(field_1);
@@ -216,35 +269,36 @@ TEST(Differential_unit, ignore_3) {
   ignore_fields.push_back(nested_field_1);
   ignore_fields.push_back(nested_field_2);
 
-  // Black list criteria will do the ignore
-  ServiceClient::blackListCriteria(log_message, ignore_fields);
+  // Write the ignore to differential request
+  Client_util::IgnoreFields(diff_request, ignore_fields);
 
-  // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
 
-  const char* c_res = res.c_str();
 
-  // Because ignore the employee.fullname, employee.employ_id, company.name,
-  // and  company.occupation so the only different element is age of the employee.
-  const char* test_res = "modified: age: 39 -> 32\n";
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  EXPECT_STREQ(c_res, test_res);
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  const char* except_res = "modified: age: 39 -> 32\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
+
+
 
 // Test 6: Test ignore nothing
 TEST(Differential_unit, ignore_4) {
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
 
-  // Set the message 1 by following stuff.
+  // ******************** write two messages **********************
+
   message_first.set_employ_id(001);
   message_first.set_fullname("Jin Huang");
   message_first.set_age(39);
@@ -262,42 +316,53 @@ TEST(Differential_unit, ignore_4) {
   message_second.mutable_employer()->set_occupation("Research Scientist");
   message_second.mutable_employer()->set_address("CA, US");
 
-  // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+
+
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
+
+  //******************** Test Content ****************************************
+
 
   // Add the ignore fields. we add two more field nested under the message employee.
   std::vector<std::string> ignore_fields;
 
   // Leave the ignore_fields as empty.
 
-  // Black list criteria will do the ignore
-  ServiceClient::blackListCriteria(log_message, ignore_fields);
+  // Write the ignore to differential request
+  Client_util::IgnoreFields(diff_request, ignore_fields);
 
-  // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
 
-  const char* c_res = res.c_str();
 
-  const char* test_res = "modified: employ_id: 1 -> 2\n"
-      "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n"
-      "modified: age: 39 -> 32\n"
-      "modified: employer.name: \"Google Inc.\" -> \"Alphabet Inc.\"\n"
-      "modified: employer.occupation: \"Software Engineer\" -> \"Research Scientist\"\n";
-  EXPECT_STREQ(c_res, test_res);
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
+
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  const char* except_res = "modified: employ_id: 1 -> 2\n"
+                           "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n"
+                           "modified: age: 39 -> 32\n"
+                           "modified: employer.name: \"Google Inc.\" -> \"Alphabet Inc.\"\n"
+                           "modified: employer.occupation: \"Software Engineer\" -> \"Research Scientist\"\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
+
+
 
 // Test 7: Test ignore all fields in message.
 TEST(Differential_unit, ignore_5) {
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
+
+  // ******************** write two messages **********************
 
   // Set the message 1 by following stuff.
   message_first.set_employ_id(001);
@@ -317,19 +382,23 @@ TEST(Differential_unit, ignore_5) {
   message_second.mutable_employer()->set_occupation("Research Scientist");
   message_second.mutable_employer()->set_address("CA, US");
 
-  // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
+
+  //******************** Test Content ****************************************
 
   // Add the ignore fields. we add two more field nested under the message employee.
   std::vector<std::string> ignore_fields;
 
-  std::string field_1("differential_client.employee.fullname");
-  std::string field_2("differential_client.employee.employ_id");
-  std::string field_3("differential_client.employee.age");
+  std::string field_1("differential_test.employee.fullname");
+  std::string field_2("differential_test.employee.employ_id");
+  std::string field_3("differential_test.employee.age");
 
-  std::string nested_field_1("differential_client.company.name");
-  std::string nested_field_2("differential_client.company.occupation");
-  std::string nested_field_3("differential_client.company.address");
+  std::string nested_field_1("differential_test.company.name");
+  std::string nested_field_2("differential_test.company.occupation");
+  std::string nested_field_3("differential_test.company.address");
 
   // push the fields
   ignore_fields.push_back(field_1);
@@ -342,32 +411,33 @@ TEST(Differential_unit, ignore_5) {
   ignore_fields.push_back(nested_field_3);
 
   // Black list criteria will do the ignore
-  ServiceClient::blackListCriteria(log_message, ignore_fields);
+  Client_util::IgnoreFields(diff_request, ignore_fields);
 
-  // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
 
-  const char* c_res = res.c_str();
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  // Because ignore all field in the message test value should return "SAME"
-  const char* test_res = "SAME";
-  EXPECT_STREQ(c_res, test_res);
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  const char* except_res = "SAME";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
+
+
 
 // Test 8: Test compare a single field.
 TEST(Differential_unit, compare_1){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
 
-  // Set the message 1 by following stuff.
+  // ******************** write two messages **********************
   message_first.set_employ_id(001);
   message_first.set_fullname("Jin Huang");
   message_first.set_age(39);
@@ -385,44 +455,49 @@ TEST(Differential_unit, compare_1){
   message_second.mutable_employer()->set_occupation("Research Scientist");
   message_second.mutable_employer()->set_address("CA, US");
 
-  // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
+
+  //******************** Test Content ****************************************
 
   // Add the ignore fields. we add two more field nested under the message employee.
   std::vector<std::string> compare_fields;
 
-  std::string field_1("differential_client.employee.fullname");
+  std::string field_1("differential_test.employee.fullname");
 
   // push the fields
   compare_fields.push_back(field_1);
 
   // White list criteria will do the ignore
-  ServiceClient::whiteListCriteria(log_message, compare_fields);
+  Client_util::CompareFields(diff_request, compare_fields);
 
-  // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
 
-  const char* c_res = res.c_str();
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  // Because only employee.fullname is compare so the result should be.
-  const char* test_res = "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n";
-  EXPECT_STREQ(c_res, test_res);
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  const char* except_res = "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
+
+
 
 // Test 9: Test compare multiple fields.
 TEST(Differential_unit, compare_2){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
 
-  // Set the message 1 by following stuff.
+  // ******************** write two messages **********************
   message_first.set_employ_id(001);
   message_first.set_fullname("Jin Huang");
   message_first.set_age(39);
@@ -440,15 +515,18 @@ TEST(Differential_unit, compare_2){
   message_second.mutable_employer()->set_occupation("Research Scientist");
   message_second.mutable_employer()->set_address("CA, US");
 
-  // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
 
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
+
+  //******************** Test Content ****************************************
   // Add the ignore fields. we add two more field nested under the message employee.
   std::vector<std::string> compare_fields;
 
-  std::string field_1("differential_client.employee.fullname");
-  std::string field_2("differential_client.employee.employ_id");
-  std::string field_3("differential_client.employee.age");
+  std::string field_1("differential_test.employee.fullname");
+  std::string field_2("differential_test.employee.employ_id");
+  std::string field_3("differential_test.employee.age");
 
   // push the fields
   compare_fields.push_back(field_1);
@@ -456,35 +534,35 @@ TEST(Differential_unit, compare_2){
   compare_fields.push_back(field_3);
 
   // White list criteria will do the ignore
-  ServiceClient::whiteListCriteria(log_message, compare_fields);
+  Client_util::CompareFields(diff_request, compare_fields);
 
-  // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
 
-  const char* c_res = res.c_str();
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  // Because only employee.fullname, employee.employ_id, and
-  // employee.age are compare so the result should be.
-  const char* test_res = "modified: employ_id: 1 -> 2\n"
-                         "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n"
-                         "modified: age: 39 -> 32\n";
-  EXPECT_STREQ(c_res, test_res);
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  const char* except_res = "modified: employ_id: 1 -> 2\n"
+                           "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n"
+                           "modified: age: 39 -> 32\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
+
+
 
 // Test 10: Test compare a nested field in message.
 TEST(Differential_unit, compare_3){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
 
-  // Set the message 1 by following stuff.
+  // ******************** write two messages **********************
   message_first.set_employ_id(001);
   message_first.set_fullname("Jin Huang");
   message_first.set_age(39);
@@ -502,48 +580,51 @@ TEST(Differential_unit, compare_3){
   message_second.mutable_employer()->set_occupation("Research Scientist");
   message_second.mutable_employer()->set_address("CA, US");
 
-  // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
 
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
+
+  //******************** Test Content ****************************************
   // Add the ignore fields. we add two more field nested under the message employee.
   std::vector<std::string> compare_fields;
 
   // because we comapre a nested field so we have to add its parent field first.
-  std::string parent_field_1("differential_client.employee.employer");
-  std::string nested_field_1("differential_client.company.name");
+  std::string parent_field_1("differential_test.employee.employer");
+  std::string nested_field_1("differential_test.company.name");
 
   // push the nested fields.
   compare_fields.push_back(parent_field_1);
   compare_fields.push_back(nested_field_1);
 
   // White list criteria will do the ignore
-  ServiceClient::whiteListCriteria(log_message, compare_fields);
+  Client_util::CompareFields(diff_request, compare_fields);
 
-  // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
 
-  const char* c_res = res.c_str();
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  // we compare a nested field named company.name that under the message employee
-  const char* test_res = "modified: employer.name: \"Google Inc.\" -> \"Alphabet Inc.\"\n";
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
 
-  EXPECT_STREQ(c_res, test_res);
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  const char* except_res = "modified: employer.name: \"Google Inc.\" -> \"Alphabet Inc.\"\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
+
+
 
 // Test 11: Test compare multiple nested fields in message.
 TEST(Differential_unit, compare_4){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
 
-  // Set the message 1 by following stuff.
+  // ******************** write two messages **********************
   message_first.set_employ_id(001);
   message_first.set_fullname("Jin Huang");
   message_first.set_age(39);
@@ -561,17 +642,20 @@ TEST(Differential_unit, compare_4){
   message_second.mutable_employer()->set_occupation("Research Scientist");
   message_second.mutable_employer()->set_address("CA, US");
 
-  // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
 
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
+
+  //******************** Test Content ****************************************
   // Add the ignore fields. we add two more field nested under the message employee.
   std::vector<std::string> compare_fields;
 
   // because we comapre a nested field so we have to add its parent field first.
-  std::string parent_field_1("differential_client.employee.employer");
-  std::string nested_field_1("differential_client.company.name");
-  std::string nested_field_2("differential_client.company.occupation");
-  std::string nested_field_3("differential_client.company.address");
+  std::string parent_field_1("differential_test.employee.employer");
+  std::string nested_field_1("differential_test.company.name");
+  std::string nested_field_2("differential_test.company.occupation");
+  std::string nested_field_3("differential_test.company.address");
 
   // push the nested fields.
   compare_fields.push_back(parent_field_1);
@@ -580,36 +664,35 @@ TEST(Differential_unit, compare_4){
   compare_fields.push_back(nested_field_3);
 
   // White list criteria will do the ignore
-  ServiceClient::whiteListCriteria(log_message, compare_fields);
+  Client_util::CompareFields(diff_request, compare_fields);
 
-  // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
 
-  const char* c_res = res.c_str();
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  // we compare multiple fields that under the message employee
-  const char* test_res = "modified: employer.name: \"Google Inc.\" -> \"Alphabet Inc.\"\n"
-                         "modified: employer.occupation: \"Software Engineer\" -> \"Research Scientist\"\n";
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
 
-  EXPECT_STREQ(c_res, test_res);
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  const char* except_res = "modified: employer.name: \"Google Inc.\" -> \"Alphabet Inc.\"\n"
+                           "modified: employer.occupation: \"Software Engineer\" -> \"Research Scientist\"\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
+
 
 // Test 12: Test compare no field in message. If the user want to compare nothing
 // (leave the compare fields blank), our service will compare every fields in
 // their message.
 TEST(Differential_unit, compare_5){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
 
-  // Set the message 1 by following stuff.
+  // ******************** write two messages **********************
   message_first.set_employ_id(001);
   message_first.set_fullname("Jin Huang");
   message_first.set_age(39);
@@ -627,45 +710,47 @@ TEST(Differential_unit, compare_5){
   message_second.mutable_employer()->set_occupation("Research Scientist");
   message_second.mutable_employer()->set_address("CA, US");
 
-  // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
 
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
+
+  //******************** Test Content ****************************************
   // Add the ignore fields. we add two more field nested under the message employee.
   std::vector<std::string> compare_fields;
 
   // Leave the compare fields empty.
 
   // White list criteria will do the ignore
-  ServiceClient::whiteListCriteria(log_message, compare_fields);
+  Client_util::CompareFields(diff_request, compare_fields);
 
-  // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
 
-  const char* c_res = res.c_str();
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  // we compare multiple fields that under the message employee
-  const char* test_res = "modified: employ_id: 1 -> 2\n"
-                         "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n"
-                         "modified: age: 39 -> 32\n"
-                         "modified: employer.name: \"Google Inc.\" -> \"Alphabet Inc.\"\n"
-                         "modified: employer.occupation: \"Software Engineer\" -> \"Research Scientist\"\n";
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
 
-  EXPECT_STREQ(c_res, test_res);
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  const char* except_res = "modified: employ_id: 1 -> 2\n"
+                           "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n"
+                           "modified: age: 39 -> 32\n"
+                           "modified: employer.name: \"Google Inc.\" -> \"Alphabet Inc.\"\n"
+                           "modified: employer.occupation: \"Software Engineer\" -> \"Research Scientist\"\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 13: Test the repeated field treat as LIST.
 TEST(Differential_unit, repeated_list_1){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
 
+  // ******************** write two messages **********************
   // Write two message with same value and same order.
   message_first.add_areas("Google Ads.");
   message_first.add_areas("YouTube Ads.");
@@ -678,38 +763,40 @@ TEST(Differential_unit, repeated_list_1){
   message_second.add_areas("Click Ads.");
 
 
-  // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
+  //******************** Test Content ****************************************
   // Set the field areas as list
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_1);
 
-  // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
 
-  const char* c_res = res.c_str();
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  // we test the field areas have the same value with the same order.
-  const char* test_res = "SAME";
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
 
-  EXPECT_STREQ(c_res, test_res);
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  const char* except_res = "SAME";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 14: Test the repeated field treat as LIST.
 TEST(Differential_unit, repeated_list_2){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
 
-  // Write two message with same value and same order.
+  // ******************** write two messages **********************
+
+// Write two message with same value and same order.
   message_first.add_areas("Google Ads.");
   message_first.add_areas("YouTube Ads.");
   message_first.add_areas("Search Ads.");
@@ -720,38 +807,38 @@ TEST(Differential_unit, repeated_list_2){
   message_second.add_areas("Click Ads.");
   message_second.add_areas("Search Ads.");
 
-  // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
+  //******************** Test Content ****************************************
   // Set the field areas as list
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_1);
 
-  // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
 
-  const char* c_res = res.c_str();
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  // we test the field areas have the same value with the same order.
-  const char* test_res = "modified: areas[2]: \"Search Ads.\" -> \"Click Ads.\"\n"
-      "modified: areas[3]: \"Click Ads.\" -> \"Search Ads.\"\n";
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
 
-  EXPECT_STREQ(c_res, test_res);
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  const char* except_res = "SAME";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 15: Test a nested repeated field treat as LIST.
 TEST(Differential_unit, repeated_list_3){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
 
+  // ******************** write two messages **********************
   // Write two message with same value and same order.
   message_first.add_areas("Google Ads.");
   message_first.add_areas("YouTube Ads.");
@@ -764,14 +851,14 @@ TEST(Differential_unit, repeated_list_3){
   message_second.add_areas("Click Ads.");
 
   // Write the nested field for two messages.
-  differential_client::dependent_info* dependentInfo_ptr_1 =
+  differential_test::dependent_info* dependentInfo_ptr_1 =
       message_first.mutable_dependents();
   dependentInfo_ptr_1->add_name("Jeremy");
   dependentInfo_ptr_1->add_name("Zhe");
   dependentInfo_ptr_1->add_name("Jin");
   dependentInfo_ptr_1->add_name("June");
 
-  differential_client::dependent_info* dependentInfo_ptr_2 =
+  differential_test::dependent_info* dependentInfo_ptr_2 =
       message_second.mutable_dependents();
 
   dependentInfo_ptr_2->add_name("Zhe");
@@ -780,43 +867,43 @@ TEST(Differential_unit, repeated_list_3){
   dependentInfo_ptr_2->add_name("Jin");
 
 
-  // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
+  //******************** Test Content ****************************************
   // Set the field areas as list
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_1);
   std::string field_2 = "dependents.name";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_2);
-//  std::string field_3 = "dependents.age";
-//  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_3);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_2);
 
-  // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
 
-  const char* c_res = res.c_str();
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  // we test the field areas have the same value with the same order.
-  const char* test_res = "modified: dependents.name[0]: \"Jeremy\" -> \"Zhe\"\n"
-      "modified: dependents.name[1]: \"Zhe\" -> \"Jeremy\"\n"
-      "modified: dependents.name[2]: \"Jin\" -> \"June\"\n"
-      "modified: dependents.name[3]: \"June\" -> \"Jin\"\n";
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
 
-  EXPECT_STREQ(c_res, test_res);
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  const char* except_res = "modified: dependents.name[0]: \"Jeremy\" -> \"Zhe\"\n"
+                           "modified: dependents.name[1]: \"Zhe\" -> \"Jeremy\"\n"
+                           "modified: dependents.name[2]: \"Jin\" -> \"June\"\n"
+                           "modified: dependents.name[3]: \"June\" -> \"Jin\"\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 16: Test multiple nested repeated fields treat as LIST.
 TEST(Differential_unit, repeated_list_4){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
+
+  // ******************** write two messages **********************
 
   // Write two message with same value and same order.
   message_first.add_areas("Google Ads.");
@@ -830,7 +917,7 @@ TEST(Differential_unit, repeated_list_4){
   message_second.add_areas("Click Ads.");
 
   // Write the nested field for two messages.
-  differential_client::dependent_info* dependentInfo_ptr_1 =
+  differential_test::dependent_info* dependentInfo_ptr_1 =
       message_first.mutable_dependents();
   dependentInfo_ptr_1->add_name("Jeremy");
   dependentInfo_ptr_1->add_name("Zhe");
@@ -842,7 +929,7 @@ TEST(Differential_unit, repeated_list_4){
   dependentInfo_ptr_1->add_age(32);
   dependentInfo_ptr_1->add_age(26);
 
-  differential_client::dependent_info* dependentInfo_ptr_2 =
+  differential_test::dependent_info* dependentInfo_ptr_2 =
       message_second.mutable_dependents();
 
   dependentInfo_ptr_2->add_name("Zhe");
@@ -855,47 +942,47 @@ TEST(Differential_unit, repeated_list_4){
   dependentInfo_ptr_2->add_age(30);
   dependentInfo_ptr_2->add_age(26);
 
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
-  // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
-
+  //******************** Test Content ****************************************
   // Set the field areas as list
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_1);
   std::string field_2 = "dependents.name";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_2);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_2);
   std::string field_3 = "dependents.age";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_3);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_3);
 
-  // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
 
-  const char* c_res = res.c_str();
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  // we test the field areas have the same value with the same order.
-  const char* test_res = "modified: dependents.name[0]: \"Jeremy\" -> \"Zhe\"\n"
-                         "modified: dependents.name[1]: \"Zhe\" -> \"Jeremy\"\n"
-                         "modified: dependents.name[2]: \"Jin\" -> \"June\"\n"
-                         "modified: dependents.name[3]: \"June\" -> \"Jin\"\n"
-                         "modified: dependents.age[1]: 30 -> 32\n"
-                         "modified: dependents.age[2]: 32 -> 30\n";
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
 
-  EXPECT_STREQ(c_res, test_res);
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  const char* except_res = "modified: dependents.name[0]: \"Jeremy\" -> \"Zhe\"\n"
+                           "modified: dependents.name[1]: \"Zhe\" -> \"Jeremy\"\n"
+                           "modified: dependents.name[2]: \"Jin\" -> \"June\"\n"
+                           "modified: dependents.name[3]: \"June\" -> \"Jin\"\n"
+                           "modified: dependents.age[1]: 30 -> 32\n"
+                           "modified: dependents.age[2]: 32 -> 30\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 17: Test multiple nested repeated fields treat as LIST.
 TEST(Differential_unit, repeated_list_5){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
 
+  // ******************** write two messages **********************
   // Write two message with same value and same order.
   message_first.add_areas("Google Ads.");
   message_first.add_areas("YouTube Ads.");
@@ -908,7 +995,7 @@ TEST(Differential_unit, repeated_list_5){
   message_second.add_areas("Click Ads.");
 
   // Write the nested field for two messages.
-  differential_client::dependent_info* dependentInfo_ptr_1 =
+  differential_test::dependent_info* dependentInfo_ptr_1 =
       message_first.mutable_dependents();
   dependentInfo_ptr_1->add_name("Jeremy");
   dependentInfo_ptr_1->add_name("Zhe");
@@ -920,7 +1007,7 @@ TEST(Differential_unit, repeated_list_5){
   dependentInfo_ptr_1->add_age(32);
   dependentInfo_ptr_1->add_age(26);
 
-  differential_client::dependent_info* dependentInfo_ptr_2 =
+  differential_test::dependent_info* dependentInfo_ptr_2 =
       message_second.mutable_dependents();
 
   dependentInfo_ptr_2->add_name("Jeremy");
@@ -934,41 +1021,42 @@ TEST(Differential_unit, repeated_list_5){
   dependentInfo_ptr_2->add_age(26);
 
 
-  // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
+  //******************** Test Content ****************************************
   // Set the field areas as list
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_1);
   std::string field_2 = "dependents.name";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_2);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_2);
   std::string field_3 = "dependents.age";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_3);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_3);
 
-  // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
 
-  const char* c_res = res.c_str();
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  // we test the field areas have the same value with the same order.
-  const char* test_res = "SAME";
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
 
-  EXPECT_STREQ(c_res, test_res);
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  const char* except_res = "SAME";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 18: Test the repeated field treat as LIST. deleted element.
 TEST(Differential_unit, repeated_list_6){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
+  // Generate two message by message type employee(defined in differential_test.proto)
   employee message_first;
   employee message_second;
-  log log_message;
 
+  // ******************** write two messages **********************
   // Write two message with same value and same order.
   message_first.add_areas("Google Ads.");
   message_first.add_areas("YouTube Ads.");
@@ -980,36 +1068,36 @@ TEST(Differential_unit, repeated_list_6){
   message_second.add_areas("Search Ads.");
 
 
-  // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+  // ***************** Generate the differential message request ***************
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
+  //******************** Test Content ****************************************
   // Set the field areas as list
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_1);
 
-  // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
 
-  const char* c_res = res.c_str();
+  // ********************** Differential Service **********************
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  // we test the field areas have the same value with the same order.
-  const char* test_res = "deleted: areas[3]: \"Click Ads.\"\n";
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
 
-  EXPECT_STREQ(c_res, test_res);
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  // ******************** Prospective result **********************
+  const char* except_res = "deleted: areas[3]: \"Click Ads.\"\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 19: Test the repeated field treat as LIST. add element.
 TEST(Differential_unit, repeated_list_7){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   // Write two message with same value and same order.
   message_first.add_areas("Google Ads.");
@@ -1024,35 +1112,33 @@ TEST(Differential_unit, repeated_list_7){
 
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the field areas as list
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_1);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // we test the field areas have the same value with the same order.
-  const char* test_res = "added: areas[3]: \"Click Ads.\"\n";
+  const char* except_res = "added: areas[3]: \"Click Ads.\"\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 20: Test the repeated field treat as SET.
 TEST(Differential_unit, repeated_set_1){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   // Write two message with same value but different order.
   message_first.add_areas("Google Ads.");
@@ -1066,36 +1152,35 @@ TEST(Differential_unit, repeated_set_1){
   message_second.add_areas("YouTube Ads.");
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_1);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // Because we treat the repeated field as set so even the element have different
   // order between the two messages the result is same.
-  const char* test_res = "SAME";
+  const char* except_res = "SAME";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 21: Test the repeated field treat as SET.
 TEST(Differential_unit, repeated_set_2){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   // Write two message with different value
   message_first.add_areas("Google Ads.");
@@ -1111,35 +1196,34 @@ TEST(Differential_unit, repeated_set_2){
 
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_1);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // The first message needs deleting the areas[1] and add "Pop_up Ads.".
-  const char* test_res = "added: areas[3]: \"Pop_up Ads.\"\ndeleted: areas[1]: \"YouTube Ads.\"\n";
+  const char* except_res = "added: areas[3]: \"Pop_up Ads.\"\ndeleted: areas[1]: \"YouTube Ads.\"\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 22: Test the repeated field treat as SET. delete element.
 TEST(Differential_unit, repeated_set_3){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   // Write two message with different value
   message_first.add_areas("Google Ads.");
@@ -1154,35 +1238,34 @@ TEST(Differential_unit, repeated_set_3){
 
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_1);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // The first message needs deleting the areas[1]
-  const char* test_res = "deleted: areas[1]: \"YouTube Ads.\"\n";
+  const char* except_res = "deleted: areas[1]: \"YouTube Ads.\"\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 23: Test the repeated field treat as SET. Add element
 TEST(Differential_unit, repeated_set_4){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   // Write two message with different value
   message_first.add_areas("Google Ads.");
@@ -1195,35 +1278,34 @@ TEST(Differential_unit, repeated_set_4){
   message_second.add_areas("Pop_up Ads."); // The different one.
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_1);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // The first message needs adding "Pop_up Ads.".
-  const char* test_res = "added: areas[3]: \"Pop_up Ads.\"\n";
+  const char* except_res = "added: areas[3]: \"Pop_up Ads.\"\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 24: Test the repeated field treat as SET. adding mulitpe elements
 TEST(Differential_unit, repeated_set_5){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   // Write two message with different value
   message_first.add_areas("Google Ads.");
@@ -1234,37 +1316,36 @@ TEST(Differential_unit, repeated_set_5){
   message_second.add_areas("Pop_up Ads."); // The different one.
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_1);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // The first message needs adding multiple elements than the seconde message.
-  const char* test_res = "added: areas[0]: \"Search Ads.\"\n"
+  const char* except_res = "added: areas[0]: \"Search Ads.\"\n"
       "added: areas[1]: \"Click Ads.\"\n"
       "added: areas[3]: \"Pop_up Ads.\"\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 25: Test the nested repeated field treat as SET.
 TEST(Differential_unit, repeated_set_6){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   // Write two message with same value and same order.
   message_first.add_areas("Google Ads.");
@@ -1278,7 +1359,7 @@ TEST(Differential_unit, repeated_set_6){
   message_second.add_areas("Search Ads.");
 
   // Write the nested field for two messages.
-  differential_client::dependent_info* dependentInfo_ptr_1 =
+  differential_test::dependent_info* dependentInfo_ptr_1 =
       message_first.mutable_dependents();
   dependentInfo_ptr_1->add_name("Jeremy");
   dependentInfo_ptr_1->add_name("Zhe");
@@ -1290,7 +1371,7 @@ TEST(Differential_unit, repeated_set_6){
   dependentInfo_ptr_1->add_age(32);
   dependentInfo_ptr_1->add_age(26);
 
-  differential_client::dependent_info* dependentInfo_ptr_2 =
+  differential_test::dependent_info* dependentInfo_ptr_2 =
       message_second.mutable_dependents();
 
   dependentInfo_ptr_2->add_name("Zhe");
@@ -1304,41 +1385,40 @@ TEST(Differential_unit, repeated_set_6){
   dependentInfo_ptr_2->add_age(26);
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_1);
 
   std::string field_2 = "dependents.name";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_2);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_2);
 
   std::string field_3 = "dependents.age";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_3);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_3);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // The first message needs adding multiple elements than the seconde message.
-  const char* test_res = "SAME";
+  const char* except_res = "SAME";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 26: Test a nested repeated field treat as SET. Add element/s
 TEST(Differential_unit, repeated_set_7){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   // Write two message with same value and same order.
   message_first.add_areas("Google Ads.");
@@ -1352,18 +1432,17 @@ TEST(Differential_unit, repeated_set_7){
   message_second.add_areas("Search Ads.");
 
   // Write the nested field for two messages.
-  differential_client::dependent_info* dependentInfo_ptr_1 =
+  differential_test::dependent_info* dependentInfo_ptr_1 =
       message_first.mutable_dependents();
   dependentInfo_ptr_1->add_name("Jeremy");
   dependentInfo_ptr_1->add_name("Zhe");
-
-
+  
   dependentInfo_ptr_1->add_age(29);
   dependentInfo_ptr_1->add_age(30);
   dependentInfo_ptr_1->add_age(32);
-//  dependentInfo_ptr_1->add_age(26);
 
-  differential_client::dependent_info* dependentInfo_ptr_2 =
+
+  differential_test::dependent_info* dependentInfo_ptr_2 =
       message_second.mutable_dependents();
 
   dependentInfo_ptr_2->add_name("Zhe");
@@ -1377,43 +1456,42 @@ TEST(Differential_unit, repeated_set_7){
   dependentInfo_ptr_2->add_age(26);
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_1);
 
   std::string field_2 = "dependents.name";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_2);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_2);
 
   std::string field_3 = "dependents.age";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_3);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_3);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // The first message needs adding multiple elements than the seconde message.
-  const char* test_res = "added: dependents.name[2]: \"June\"\n"
+  const char* except_res = "added: dependents.name[2]: \"June\"\n"
       "added: dependents.name[3]: \"Jin\"\n"
       "added: dependents.age[3]: 26\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 27: Test a nested repeated field treat as SET. delete element/s
 TEST(Differential_unit, repeated_set_8){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   // Write two message with same value and same order.
   message_first.add_areas("Google Ads.");
@@ -1427,7 +1505,7 @@ TEST(Differential_unit, repeated_set_8){
   message_second.add_areas("Search Ads.");
 
   // Write the nested field for two messages.
-  differential_client::dependent_info* dependentInfo_ptr_1 =
+  differential_test::dependent_info* dependentInfo_ptr_1 =
       message_first.mutable_dependents();
   dependentInfo_ptr_1->add_name("Jeremy");
   dependentInfo_ptr_1->add_name("Zhe");
@@ -1439,7 +1517,7 @@ TEST(Differential_unit, repeated_set_8){
   dependentInfo_ptr_1->add_age(32);
   dependentInfo_ptr_1->add_age(26);
 
-  differential_client::dependent_info* dependentInfo_ptr_2 =
+  differential_test::dependent_info* dependentInfo_ptr_2 =
       message_second.mutable_dependents();
 
   dependentInfo_ptr_2->add_name("Zhe");
@@ -1451,42 +1529,41 @@ TEST(Differential_unit, repeated_set_8){
   dependentInfo_ptr_2->add_age(26);
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_1);
 
   std::string field_2 = "dependents.name";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_2);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_2);
 
   std::string field_3 = "dependents.age";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_3);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_3);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // The first message needs adding multiple elements than the seconde message.
-  const char* test_res = "deleted: dependents.name[2]: \"Jin\"\n"
+  const char* except_res = "deleted: dependents.name[2]: \"Jin\"\n"
       "deleted: dependents.age[2]: 32\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 28: Test a nested repeated field treat as SET. delete element/s
 TEST(Differential_unit, repeated_set_9){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   // Write two message with same value and same order.
   message_first.add_areas("Google Ads.");
@@ -1500,7 +1577,7 @@ TEST(Differential_unit, repeated_set_9){
   message_second.add_areas("Search Ads.");
 
   // Write the nested field for two messages.
-  differential_client::dependent_info* dependentInfo_ptr_1 =
+  differential_test::dependent_info* dependentInfo_ptr_1 =
       message_first.mutable_dependents();
   dependentInfo_ptr_1->add_name("Jeremy");
   dependentInfo_ptr_1->add_name("Zhe");
@@ -1512,7 +1589,7 @@ TEST(Differential_unit, repeated_set_9){
   dependentInfo_ptr_1->add_age(32);
   dependentInfo_ptr_1->add_age(26);
 
-  differential_client::dependent_info* dependentInfo_ptr_2 =
+  differential_test::dependent_info* dependentInfo_ptr_2 =
       message_second.mutable_dependents();
 
   dependentInfo_ptr_2->add_name("Zhe");
@@ -1526,42 +1603,41 @@ TEST(Differential_unit, repeated_set_9){
   dependentInfo_ptr_2->add_age(26);
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_1);
 
   std::string field_2 = "dependents.name";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_2);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_2);
 
   std::string field_3 = "dependents.age";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_3);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_3);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // The first message needs adding multiple elements than the seconde message.
-  const char* test_res = "deleted: dependents.name[2]: \"Jin\"\n"
+  const char* except_res = "deleted: dependents.name[2]: \"Jin\"\n"
                          "deleted: dependents.age[2]: 32\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 29: Test a nested repeated field treat as SET. delete and add element/s
 TEST(Differential_unit, repeated_set_10){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   // Write two message with same value and same order.
   message_first.add_areas("Google Ads.");
@@ -1575,7 +1651,7 @@ TEST(Differential_unit, repeated_set_10){
   message_second.add_areas("Search Ads.");
 
   // Write the nested field for two messages.
-  differential_client::dependent_info* dependentInfo_ptr_1 =
+  differential_test::dependent_info* dependentInfo_ptr_1 =
       message_first.mutable_dependents();
   dependentInfo_ptr_1->add_name("Jeremy");
   dependentInfo_ptr_1->add_name("Zhe");
@@ -1587,7 +1663,7 @@ TEST(Differential_unit, repeated_set_10){
   dependentInfo_ptr_1->add_age(31);
   dependentInfo_ptr_1->add_age(26);
 
-  differential_client::dependent_info* dependentInfo_ptr_2 =
+  differential_test::dependent_info* dependentInfo_ptr_2 =
       message_second.mutable_dependents();
 
   dependentInfo_ptr_2->add_name("Zhe");
@@ -1601,46 +1677,45 @@ TEST(Differential_unit, repeated_set_10){
   dependentInfo_ptr_2->add_age(26);
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_1);
 
   std::string field_2 = "dependents.name";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_2);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_2);
 
   std::string field_3 = "dependents.age";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_3);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_3);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // The first message needs adding multiple elements than the seconde message.
-  const char* test_res = "added: areas[3]: \"Search Ads.\"\n"
+  const char* except_res = "added: areas[3]: \"Search Ads.\"\n"
       "deleted: areas[2]: \"Pop_up Ads.\"\n"
       "added: dependents.name[3]: \"Jin\"\n"
       "deleted: dependents.name[2]: \"Tom\"\n"
       "added: dependents.age[2]: 32\n"
       "deleted: dependents.age[2]: 31\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 30: Test a nested repeated field treat as SET. Add element/s
 TEST(Differential_unit, repeated_list_and_set){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   // Write two message with same value and same order.
   message_first.add_areas("Google Ads.");
@@ -1655,7 +1730,7 @@ TEST(Differential_unit, repeated_list_and_set){
 
 
   // Write the nested field for two messages.
-  differential_client::dependent_info* dependentInfo_ptr_1 =
+  differential_test::dependent_info* dependentInfo_ptr_1 =
       message_first.mutable_dependents();
   dependentInfo_ptr_1->add_name("Jeremy");
   dependentInfo_ptr_1->add_name("Zhe");
@@ -1667,7 +1742,7 @@ TEST(Differential_unit, repeated_list_and_set){
   dependentInfo_ptr_1->add_age(32);
   dependentInfo_ptr_1->add_age(26);
 
-  differential_client::dependent_info* dependentInfo_ptr_2 =
+  differential_test::dependent_info* dependentInfo_ptr_2 =
       message_second.mutable_dependents();
 
   dependentInfo_ptr_2->add_name("Zhe");
@@ -1681,41 +1756,40 @@ TEST(Differential_unit, repeated_list_and_set){
   dependentInfo_ptr_2->add_age(26);
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_1);
 
   std::string field_2 = "dependents.name";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, field_2);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, field_2);
 
   std::string field_3 = "dependents.age";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_3);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, field_3);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // The first message needs adding multiple elements than the seconde message.
-  const char* test_res = "SAME";
+  const char* except_res = "SAME";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 31: Test a sub filed treat as Map. Map is different
 TEST(Differential_unit, map_1){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   education_info* edu_info_1 = message_first.add_education();
   edu_info_1->set_name("University of Dayton");
@@ -1730,38 +1804,37 @@ TEST(Differential_unit, map_1){
   edu_info_2->set_address("OH, US");
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the map value for repeated filed compare.
   std::string map_field_name = "education";
   std::vector<std::string> sub_field_list;
   sub_field_list.push_back("name");
-  ServiceClient::treat_repeated_field_map(log_message, map_field_name, sub_field_list);
+  Client_util::TreatRepeatedFieldAsMap(diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // Map value is different replace the Map-value.
-  const char* test_res = "added: education[0]: { name: \"Wright State University\" degree: \"PhD\" major: \"Computer Science\" address: \"OH, US\" }\n"
+  const char* except_res = "added: education[0]: { name: \"Wright State University\" degree: \"PhD\" major: \"Computer Science\" address: \"OH, US\" }\n"
       "deleted: education[0]: { name: \"University of Dayton\" degree: \"PhD\" major: \"Computer Science\" address: \"OH, US\" }\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 32: Test a sub filed treat as Map. Value is different
 TEST(Differential_unit, map_2){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   education_info* edu_info_1 = message_first.add_education();
   edu_info_1->set_name("Wright State University");
@@ -1776,38 +1849,37 @@ TEST(Differential_unit, map_2){
   edu_info_2->set_address("OH, US");
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the map value for repeated filed compare.
   std::string map_field_name = "education";
   std::vector<std::string> sub_field_list;
   sub_field_list.push_back("name");
-  ServiceClient::treat_repeated_field_map(log_message, map_field_name, sub_field_list);
+  Client_util::TreatRepeatedFieldAsMap(diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // The first message needs adding multiple elements than the seconde message.
-  const char* test_res = "modified: education[0].degree: \"PhD\" -> \"Master of Science\"\n"
+  const char* except_res = "modified: education[0].degree: \"PhD\" -> \"Master of Science\"\n"
       "modified: education[0].major: \"Computer Science\" -> \"Computer Science and Engineering\"\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 33: Test a sub filed treat as Map. Map and Value are different at same time.
 TEST(Differential_unit, map_3){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   education_info* edu_info_1 = message_first.add_education();
   edu_info_1->set_name("Wright State University");
@@ -1822,38 +1894,37 @@ TEST(Differential_unit, map_3){
   edu_info_2->set_address("OH, US");
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the map value for repeated filed compare.
   std::string map_field_name = "education";
   std::vector<std::string> sub_field_list;
   sub_field_list.push_back("name");
-  ServiceClient::treat_repeated_field_map(log_message, map_field_name, sub_field_list);
+  Client_util::TreatRepeatedFieldAsMap(diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // map value different add and delete.
-  const char* test_res = "added: education[0]: { name: \"University of Dayton\" degree: \"Master of Science\" major: \"Computer Science and Engineering\" address: \"OH, US\" }\n"
+  const char* except_res = "added: education[0]: { name: \"University of Dayton\" degree: \"Master of Science\" major: \"Computer Science and Engineering\" address: \"OH, US\" }\n"
       "deleted: education[0]: { name: \"Wright State University\" degree: \"PhD\" major: \"Computer Science\" address: \"OH, US\" }\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 34: Test multiple sub fields as Map. Map is different.
 TEST(Differential_unit, map_4){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   education_info* edu_info_1 = message_first.add_education();
   edu_info_1->set_name("Wright State University");
@@ -1868,39 +1939,38 @@ TEST(Differential_unit, map_4){
   edu_info_2->set_address("OH, US");
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the map value for repeated filed compare.
   std::string map_field_name = "education";
   std::vector<std::string> sub_field_list;
   sub_field_list.push_back("name");
   sub_field_list.push_back("degree");
-  ServiceClient::treat_repeated_field_map(log_message, map_field_name, sub_field_list);
+  Client_util::TreatRepeatedFieldAsMap(diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // Map value different
-  const char* test_res = "added: education[0]: { name: \"University of Dayton\" degree: \"PhD\" major: \"Computer Science\" address: \"OH, US\" }\n"
+  const char* except_res = "added: education[0]: { name: \"University of Dayton\" degree: \"PhD\" major: \"Computer Science\" address: \"OH, US\" }\n"
       "deleted: education[0]: { name: \"Wright State University\" degree: \"PhD\" major: \"Computer Science\" address: \"OH, US\" }\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 35: Test multiple sub fields as Map. Value is different.
 TEST(Differential_unit, map_5){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   education_info* edu_info_1 = message_first.add_education();
   edu_info_1->set_name("Wright State University");
@@ -1915,38 +1985,37 @@ TEST(Differential_unit, map_5){
   edu_info_2->set_degree("PhD");
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the map value for repeated filed compare.
   std::string map_field_name = "education";
   std::vector<std::string> sub_field_list;
   sub_field_list.push_back("name");
   sub_field_list.push_back("degree");
-  ServiceClient::treat_repeated_field_map(log_message, map_field_name, sub_field_list);
+  Client_util::TreatRepeatedFieldAsMap(diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // The first message needs adding multiple elements than the seconde message.
-  const char* test_res = "modified: education[0].major: \"Computer Science\" -> \"Computer Science and Engineering\"\n";
+  const char* except_res = "modified: education[0].major: \"Computer Science\" -> \"Computer Science and Engineering\"\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 36: Test multiple sub fields as Map. Map and Value are different.
 TEST(Differential_unit, map_6){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   education_info* edu_info_1 = message_first.add_education();
   edu_info_1->set_name("Wright State University");
@@ -1962,39 +2031,38 @@ TEST(Differential_unit, map_6){
 
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the map value for repeated filed compare.
   std::string map_field_name = "education";
   std::vector<std::string> sub_field_list;
   sub_field_list.push_back("name");
   sub_field_list.push_back("degree");
-  ServiceClient::treat_repeated_field_map(log_message, map_field_name, sub_field_list);
+  Client_util::TreatRepeatedFieldAsMap(diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // The first message needs adding multiple elements than the seconde message.
-  const char* test_res = "added: education[0]: { name: \"University of Dayton\" degree: \"PhD\" major: \"Computer Science and Engineering\" address: \"OH, US\" }\n"
+  const char* except_res = "added: education[0]: { name: \"University of Dayton\" degree: \"PhD\" major: \"Computer Science and Engineering\" address: \"OH, US\" }\n"
       "deleted: education[0]: { name: \"Wright State University\" degree: \"PhD\" major: \"Computer Science\" address: \"OH, US\" }\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 37: Test multiple sub fields as Map. message 1 is empty
 TEST(Differential_unit, map_7){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   education_info* edu_info_1 = message_first.add_education();
 
@@ -2006,41 +2074,40 @@ TEST(Differential_unit, map_7){
 
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the map value for repeated filed compare.
   std::string map_field_name = "education";
   std::vector<std::string> sub_field_list;
   sub_field_list.push_back("name");
   sub_field_list.push_back("degree");
-  ServiceClient::treat_repeated_field_map(log_message, map_field_name, sub_field_list);
+  Client_util::TreatRepeatedFieldAsMap(diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // The first message needs adding multiple elements than the seconde message.
-  const char* test_res = "added: education[0]: { name: \"University of Dayton\" "
+  const char* except_res = "added: education[0]: { name: \"University of Dayton\" "
       "degree: \"PhD\" "
       "major: \"Computer Science and Engineering\" "
       "address: \"OH, US\" }\ndeleted: education[0]: { }\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 38: Test multiple sub fields as Map. message 2 is empty
 TEST(Differential_unit, map_8){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   education_info* edu_info_1 = message_first.add_education();
   edu_info_1->set_name("Wright State University");
@@ -2051,158 +2118,173 @@ TEST(Differential_unit, map_8){
   education_info* edu_info_2 = message_second.add_education();
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // Set the map value for repeated filed compare.
   std::string map_field_name = "education";
   std::vector<std::string> sub_field_list;
-  sub_field_list.push_back("name");
-  sub_field_list.push_back("degree");
-  ServiceClient::treat_repeated_field_map(log_message, map_field_name, sub_field_list);
+  sub_field_list.emplace_back("name");
+  sub_field_list.emplace_back("degree");
+  Client_util::TreatRepeatedFieldAsMap(diff_request, map_field_name, sub_field_list);
 
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // The first message needs adding multiple elements than the second message.
-  const char* test_res = "added: education[0]: { }\n"
+  const char* except_res = "added: education[0]: { }\n"
       "deleted: education[0]: { name: \"Wright State University\" degree: \"PhD\" major: \"Computer Science\" address: \"OH, US\" }\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 39 - 41: Test the fraction and margin for float number comparison
 TEST(Differential_unit, float_and_double_1){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   message_first.set_floatpoint(100.0f);
   message_second.set_floatpoint(109.9f);
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   //1)
   // Should fail since the fraction is smaller than error.
-  ServiceClient::setFractionAndMargin(log_message, 0.01, 0.0);
+  Client_util::SetFractionAndMargin(diff_request, 0.01, 0.0);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
-  const char* c_res = res.c_str();
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
+
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // should fail.
-  const char* test_res = "modified: floatpoint: 100 -> 109.90000152587891\n";
-  EXPECT_STREQ(c_res, test_res);
+  const char* except_res = "modified: floatpoint: 100 -> 109.90000152587891\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
 
   // 2)
   // Test out float comparison with fraction.
-  ServiceClient::setFractionAndMargin(log_message, 0.2, 0.0);
+  Client_util::SetFractionAndMargin(diff_request, 0.2, 0.0);
 
   // Implements the differential service.
-  std::string res_1 = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
-  const char* c_res_1 = res_1.c_str();
+  DiffMsgReply diff_reply_1 = TestStub_->DifferentialService(diff_request);
+
+  // Get the test result.
+  const std::string& test_res_1 = diff_reply_1.result();
+
+  const char* c_test_res_1 = test_res_1.c_str();
 
   // should same.
-  const char* test_res_1 = "SAME";
-  EXPECT_STREQ(c_res_1, test_res_1);
+  const char* except_res_1 = "SAME";
+
+  EXPECT_STREQ(c_test_res_1, except_res_1);
 
   // 3)
   // Test out float comparison with fraction.
-  ServiceClient::setFractionAndMargin(log_message, 0.01, 10.0);
+  Client_util::SetFractionAndMargin(diff_request, 0.01, 10.0);
 
   // Implements the differential service.
-  std::string res_2 = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
-  const char* c_res_2 = res_1.c_str();
+  DiffMsgReply diff_reply_2 = TestStub_->DifferentialService(diff_request);
+
+  // Get the test result.
+  const std::string& test_res_2 = diff_reply_2.result();
+
+
+  const char* c_test_res_2 = test_res_2.c_str();
 
   // should same.
-  const char* test_res_2 = "SAME";
-  EXPECT_STREQ(c_res_2, test_res_2);
-
+  const char* except_res_2 = "SAME";
+  EXPECT_STREQ(c_test_res_2, except_res_2);
 }
 
 // Test 42 - 44: Test the fraction and margin for double number comparison
 TEST(Differential_unit, float_and_double_2){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+
 
   message_first.set_floatpoint(100.0);
   message_second.set_floatpoint(109.9);
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+  DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   //1)
   // Should fail since the fraction is smaller than error.
-  ServiceClient::setFractionAndMargin(log_message, 0.01, 0.0);
+  Client_util::SetFractionAndMargin(diff_request, 0.01, 0.0);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
-  const char* c_res = res.c_str();
+  DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
+
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // should fail.
-  const char* test_res = "modified: floatpoint: 100 -> 109.9\n";
-  EXPECT_STREQ(c_res, test_res);
+  const char* except_res = "modified: floatpoint: 100 -> 109.9\n";
+
+  EXPECT_STREQ(c_test_res, except_res);
 
   // 2)
   // Test out float comparison with fraction.
-  ServiceClient::setFractionAndMargin(log_message, 0.2, 0.0);
+  Client_util::SetFractionAndMargin(diff_request, 0.2, 0.0);
 
   // Implements the differential service.
-  std::string res_1 = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
-  const char* c_res_1 = res_1.c_str();
+  DiffMsgReply diff_reply_1 = TestStub_->DifferentialService(diff_request);
+
+  // Get the test result.
+  const std::string& test_res_1 = diff_reply_1.result();
+
+  const char* c_test_res_1 = test_res_1.c_str();
 
   // should same.
-  const char* test_res_1 = "SAME";
-  EXPECT_STREQ(c_res_1, test_res_1);
+  const char* except_res_1 = "SAME";
+
+  EXPECT_STREQ(c_test_res_1, except_res_1);
 
   // 3)
   // Test out float comparison with fraction.
-  ServiceClient::setFractionAndMargin(log_message, 0.01, 10.0);
+  Client_util::SetFractionAndMargin(diff_request, 0.01, 10.0);
 
   // Implements the differential service.
-  std::string res_2 = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
-  const char* c_res_2 = res_1.c_str();
+  DiffMsgReply diff_reply_2 = TestStub_->DifferentialService(diff_request);
+
+  // Get the test result.
+  const std::string& test_res_2 = diff_reply_2.result();
+
+
+  const char* c_test_res_2 = test_res_2.c_str();
 
   // should same.
-  const char* test_res_2 = "SAME";
-  EXPECT_STREQ(c_res_2, test_res_2);
-
+  const char* except_res_2 = "SAME";
+  EXPECT_STREQ(c_test_res_2, except_res_2);
 }
 
 // Test 45: Test the ignore field isolated from repeated field set.
 TEST(Differential_unit, ignore_isolate_1){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   message_first.set_fullname("Jin Huang");
   // Write two message with same value and same order.
@@ -2218,41 +2300,40 @@ TEST(Differential_unit, ignore_isolate_1){
   message_second.add_areas("Click Ads.");
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // ignore the areas field
   std::vector<std::string> fields;
-  std::string field_1("differential_client.employee.areas");
+  std::string field_1("differential_test.employee.areas");
   fields.push_back(field_1);
-  ServiceClient::blackListCriteria(log_message, fields);
+  Client_util::IgnoreFields(diff_request, fields);
 
   // Set the field areas as list
   std::string repeated_field = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, repeated_field);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, repeated_field);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // Because we ignore the area field so differential only at fullname will presented.
-  const char* test_res = "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n";
+  const char* except_res = "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 46: Test the ignore field isolated from repeated field set.
 TEST(Differential_unit, ignore_isolate_2){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   message_first.set_fullname("Jin Huang");
   // Write two message with same value and same order.
@@ -2280,50 +2361,49 @@ TEST(Differential_unit, ignore_isolate_2){
   edu_info_2->set_address("OH, US");
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // ignore the areas field
   std::vector<std::string> fields;
-  std::string field_1("differential_client.employee.education");
-  std::string field_2("differential_client.employee.areas");
+  std::string field_1("differential_test.employee.education");
+  std::string field_2("differential_test.employee.areas");
   fields.push_back(field_1);
   fields.push_back(field_2);
-  ServiceClient::blackListCriteria(log_message, fields);
+  Client_util::IgnoreFields(diff_request, fields);
 
   // Set the field areas as list
   std::string repeated_field = "areas";
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, repeated_field);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, repeated_field);
 
   // Set the map value for repeated filed compare.
   std::string map_field_name = "education";
   std::vector<std::string> sub_field_list;
   sub_field_list.push_back("name");
-  ServiceClient::treat_repeated_field_map(log_message, map_field_name, sub_field_list);
+  Client_util::TreatRepeatedFieldAsMap(diff_request, map_field_name, sub_field_list);
 
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
 
   // Because we ignore the area field so differential only at fullname will presented.
-  const char* test_res = "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n";
+  const char* except_res = "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
 
 // Test 47: Test the differential service comprehensively
 TEST(Differential_unit, total_test_1){
-  // Establish the gRPC channel with port number.
-  std::string target_str;
-  target_str = "0.0.0.0:50053";
-  ServiceClient serviceClient(
-      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 
   employee message_first;
   employee message_second;
-  log log_message;
+   
 
   // write the message 1.
   message_first.set_employ_id(001);
@@ -2349,7 +2429,7 @@ TEST(Differential_unit, total_test_1){
   edu_info_1->set_address("OH, US");
 
   // set the dependent info
-  differential_client::dependent_info* dependentInfo_ptr_1 =
+  differential_test::dependent_info* dependentInfo_ptr_1 =
       message_first.mutable_dependents();
   dependentInfo_ptr_1->add_name("Jeremy");
   dependentInfo_ptr_1->add_name("Zhe");
@@ -2388,7 +2468,7 @@ TEST(Differential_unit, total_test_1){
   edu_info_2->set_address("OH, US");
 
   // set the dependent info
-  differential_client::dependent_info* dependentInfo_ptr_2 =
+  differential_test::dependent_info* dependentInfo_ptr_2 =
       message_second.mutable_dependents();
   dependentInfo_ptr_2->add_name("Jeremy");
   dependentInfo_ptr_2->add_name("June");
@@ -2404,49 +2484,54 @@ TEST(Differential_unit, total_test_1){
   message_second.set_floatpoint(num2);
 
   // Write the message to log message.
-  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
+    DiffMsgRequest diff_request = Client_util::WriteMsgToDiffRequest(message_first,
+                                                                   message_second);
 
   // add ignore fields
   std::vector<std::string> ignore_fields;
-  std::string field_1("differential_client.employee.employ_id");
-  std::string field_2("differential_client.company.address");
-  std::string field_3("differential_client.education_info.address");
+  std::string field_1("differential_test.employee.employ_id");
+  std::string field_2("differential_test.company.address");
+  std::string field_3("differential_test.education_info.address");
 
   ignore_fields.push_back(field_1);
   ignore_fields.push_back(field_2);
   ignore_fields.push_back(field_3);
-  ServiceClient::blackListCriteria(log_message, ignore_fields);
+  Client_util::IgnoreFields(diff_request, ignore_fields);
 
   // Set the field areas as list
   std::string repeated_field_1("areas");
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, repeated_field_1);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 0, repeated_field_1);
 
   // Set the field dependents.name as set
   std::string repeated_field_2("dependents.name");
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, repeated_field_2);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, repeated_field_2);
 
   // Set the field dependents.age as set
   std::string repeated_field_3("dependents.age");
-  ServiceClient::treat_repeated_field_list_or_set(log_message, 1, repeated_field_3);
+  Client_util::TreatRepeatedFieldAsListOrSet(diff_request, 1, repeated_field_3);
 
   // Set the map value comparison
   std::string map_field_name("education");
   std::vector<std::string> sub_field_list;
-  sub_field_list.push_back("name");
-  sub_field_list.push_back("degree");
-  ServiceClient::treat_repeated_field_map(log_message, map_field_name, sub_field_list);
+  sub_field_list.emplace_back("name");
+  sub_field_list.emplace_back("degree");
+  Client_util::TreatRepeatedFieldAsMap(diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-  std::string res = serviceClient.DifferentialService(
-      message_first, message_second, log_message );
+   DiffMsgReply diff_reply = TestStub_->DifferentialService(diff_request);
 
-  const char* c_res = res.c_str();
+  // Get the test result.
+  const std::string& test_res = diff_reply.result();
 
-  const char* test_res = "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n"
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  const char* except_res = "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n"
       "modified: employer.occupation: \"Softwear Engineer\" -> \"Softweare Engineer\"\n";
 
-  EXPECT_STREQ(c_res, test_res);
+  EXPECT_STREQ(c_test_res, except_res);
 }
+
 
 
 // TEST end line.
@@ -2455,6 +2540,8 @@ TEST(Differential_unit, total_test_1){
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
+  // Create a global test environment for all test cases.
+  testing::AddGlobalTestEnvironment(new DifferentialTestEnvironment());
   return RUN_ALL_TESTS();
 }
 
