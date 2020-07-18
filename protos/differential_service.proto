@@ -5,7 +5,7 @@
 // Last Update: 07/07/2020
 
 syntax = "proto3";
-package differentialservice;
+package DifferentialService;
 
 // message and service definition
 message MsgRequest{
@@ -144,12 +144,55 @@ message MapCompareTuple{
   //  ServiceClient::treat_repeated_field_map(log_message, map_field_name, sub_field_list);
 
   // name of repeated field
-  string name_of_repeated_field = 1;
+  string repeated_field = 1;
   // Map field for the comparison
-  repeated string name_of_sub_field = 2;
+  repeated string key_field = 2;
 }
 
-message FloatNumComparison{
+message MapCompareNotSameIndex{
+  // Define this interface for the given field will be treated as a map for diffing purposes,
+  // with [key] do not appear at the same index.
+
+  string repeated_field = 1; // The repeated field name.
+  /*
+  Implement the MapKeyComparator to compare two repeated field without same index key field.
+
+  As the following example, we want to compare the field ExamScore
+  by Key [first_exam] in the first field and Key [second_exam] in the seconde field
+
+  [Message definition]:
+  message ExamScore{
+    string first_exam = 1;
+    int32 first_score = 2;
+    string second_exam = 3;
+    int32 seconde_score = 4;
+  }
+
+  message TestEmployee{
+  repeated ExamScore exam_score = 1;
+  }
+
+
+  [Content of First Message]:
+  first_exam = "Mid-term"; <-------- first key
+  first_score = 98;
+  second_exam = "Final";
+  seconde_score = 89;
+
+
+  [Content of Second Message]:
+  first_exam = "Final";
+  first_score = 92;
+  second_exam = "Mid-term"; <------ second key
+  seconde_score = 91;
+
+  */
+
+  string first_key_field = 2;
+  string second_key_field = 3;
+}
+
+message FloatNumComparison {
   // Defines how to compare the float/double number with fraction and margin.
   // p.s. We supply a method in the class ServiceClient to help the user set the fraction and margin
   //      when compare the float or double value.
@@ -158,7 +201,7 @@ message FloatNumComparison{
   double margin = 2;
 }
 
-message DiffMsgRequest {
+message DiffRequest {
   // Defines how to transmit the input messages from client to server.
 
   // After structure the input messages, user need serialize these two message to string and write the serialized messages
@@ -188,8 +231,8 @@ message DiffMsgRequest {
   //  message_second.set_age(32);
   //
   //  ServiceClient::messageWriter(&message_first, &message_second, &log_message);
-  bytes message_1 = 1;
-  bytes message_2 = 2;
+  bytes first_message = 1;
+  bytes second_message = 2;
   string name_of_message_descriptor = 3;
   repeated bytes file_descriptor_proto = 4;
 
@@ -202,19 +245,33 @@ message DiffMsgRequest {
   // Map-based compare the repeated_field with one/more field.
   repeated MapCompareTuple map_compare = 7;
 
+  // Map-based compare the given repeated field if the [key] field don't appear at the same index.
+  MapCompareNotSameIndex map_compare_not_same_index = 8;
+
   // Set the fraction and margin for float/double number comparison.
-  FloatNumComparison fraction_margin = 8;
+  FloatNumComparison fraction_margin = 9;
 }
 
-message DiffMsgReply {
-  // The result and error of differential service were writen in this message type.
+message DiffResponse {
+  // The response of the differential service will be writen in this message.
+  // [C++ codes]:
+  // DiffResponse differ_response;
+  // Status status = stub_->DifferentialService(&context, diff_request, &differ_response);
+  // if (status.ok()) {
+  //    return differ_response;
+  //  } else {
+  //    differ_response.set_error(status.error_message());
+  //    differ_response.clear_result();
+  //    std::cout << status.error_code() << ": " << status.error_message()
+  //              << std::endl;
+  //    return differ_response;
+  //  }
+
   string result = 1;
   string error = 2;
 }
 
-
-
-service DifferentialServer{
+service ServerDifferential {
   // The differential service support two methods to compare two message
   // 1) as default or 2) with customization.
 
@@ -279,7 +336,7 @@ service DifferentialServer{
   //      private:
   //        std::unique_ptr<DifferentialServer::Stub> stub_;
   //    }
-  rpc DefaultDifferentialService(DiffMsgRequest) returns (DiffMsgReply) {}
+  rpc DefaultDifferentialService (DiffRequest) returns (DiffResponse) {}
 
 
   // Declare a customize differential service
@@ -303,7 +360,7 @@ service DifferentialServer{
   // 4. Set the fraction and margin to float/double comparison.
   //    By setting "float_comparison fraction_margin = 8;"
   //    User could approximate the comparison of float/double number.
-  rpc DifferentialService(DiffMsgRequest) returns (DiffMsgReply) {}
+  rpc DifferentialService (DiffRequest) returns (DiffResponse) {}
 }
 
 

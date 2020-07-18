@@ -1,46 +1,46 @@
 syntax = "proto3";
 
-package differential_test;
+package DifferentialTest;
 
 import "differential_service.proto";
 
 // nested message for message employee
-message company{
+message Company{
   string name = 1;
   string occupation = 2;
   string address = 3;
 }
 // nested message for message employee
-message education_info{
+message EducationInfo{
   string name = 1;
   string degree = 2;
   string major = 3;
   string address = 4;
 }
 // nested message for message employee
-message dependent_info{
+message DependentInfo{
   repeated string name = 1;
   repeated int32 age = 2;
 }
 // nested message for message employee
-message field_set{
+message ExamScore{
   string exam1 = 1;
   int32 score1 = 2;
   string exam2 = 3;
   float score2 = 4;
 }
 
-message employee{
+message TestEmployee{
   int32 employ_id = 1;
   string fullname = 2;
   int32 age = 3;
-  company employer = 4;
+  Company employer = 4;
   repeated string areas = 5;
-  repeated education_info education = 6;
-  dependent_info dependents = 7;
+  repeated EducationInfo education = 6;
+  DependentInfo dependents = 7;
   double floatpoint = 8;
 
-  repeated field_set foo = 9;
+  repeated ExamScore exam_score = 9;
 
   map<string, string> info = 10;
 }

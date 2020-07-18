@@ -35,15 +35,19 @@ using grpc::ServerBuilder;
 using grpc::ServerContext;
 using grpc::Status;
 
-using differentialservice::DifferentialServer;
-using differentialservice::DiffMsgRequest;
-using differentialservice::DiffMsgReply;
-using differentialservice::MsgReply;
-using differentialservice::MsgRequest;
+using DifferentialService::ServerDifferential;
+using DifferentialService::DiffRequest;
+using DifferentialService::DiffResponse;
+using DifferentialService::MsgReply;
+using DifferentialService::MsgRequest;
 
+// Declare a unordered_set printer function for debug propose.
+void SetPrinter(std::unordered_set<std::string> const &s){
+    std::copy(s.begin(), s.end(), std::ostream_iterator<std::string>(std::cout, " "));
+ }
 
-// A helper function for GetFieldDescriptor() function.
-std::vector<std::string> stringSplit(const std::string& string) {
+// A helper function for split string type value implemented by GetFieldDescriptor() function.
+std::vector<std::string> StringSplit(const std::string& string) {
   std::vector<std::string> res;
   std::stringstream check1(string);
   std::string intermediate;
@@ -53,12 +57,14 @@ std::vector<std::string> stringSplit(const std::string& string) {
   return res;
 }
 
-// Get the field descriptor of a message.
-const FieldDescriptor* GetFieldDescriptor(const Message& message,
-                                          const std::string& field_name) {
-  std::vector<std::string> field_path = stringSplit(field_name);
+// Get the field descriptor for a string type of field name.(TestEmployee.fullname)
+const FieldDescriptor* GetFieldDescriptor(const Message& message, const std::string& field_name) {
+  // Split the field name by "." ("TestEmployee.fullname" => ["TestEmployee", "fullname"])
+  std::vector<std::string> field_path = StringSplit(field_name);
   const Descriptor* descriptor = message.GetDescriptor();
   const FieldDescriptor* field = nullptr;
+
+  // Loop the field name until the last one.
   for (int i = 0; i < field_path.size(); ++i) {
     field = descriptor->FindFieldByName(field_path[i]);
     descriptor = field->message_type();
@@ -66,17 +72,23 @@ const FieldDescriptor* GetFieldDescriptor(const Message& message,
   return field;
 }
 
-class FieldIgnoreCriteria : public MessageDifferencer::IgnoreCriteria {
+/*
+ *   Implement the IgnoreCriteria to ignore the specific fields
+ */
+class IgnoreFieldImpl : public MessageDifferencer::IgnoreCriteria {
  public:
-  FieldIgnoreCriteria() { set_ptr = new std::unordered_set<std::string>; }
+  IgnoreFieldImpl() { ignore_fields = new std::unordered_set<std::string>; }
 
-  void add_featureField(const std::string& field) { set_ptr->insert(field); }
+  // Add the field name into the ignore_fields
+  void AddField(const std::string& field){
+    ignore_fields->insert(field);
+  }
 
-  bool IsIgnored(const Message& msg1, const Message& msg2,
-                 const FieldDescriptor* field,
-                 const std::vector<MessageDifferencer::SpecificField>&
-                     parent_fields) override {
-    if (set_ptr->find(field->full_name()) == set_ptr->end()) {
+  bool IsIgnored(const Message& msg1, const Message& msg2, const FieldDescriptor* field,
+                 const std::vector<MessageDifferencer::SpecificField>& parent_fields) override {
+    // Check if the field name is in the ignore_fields
+    if (ignore_fields->find(field->full_name()) == ignore_fields->end()) {
+      // If not in ignore_fields.
       return false;
     } else {
       return true;
@@ -84,25 +96,28 @@ class FieldIgnoreCriteria : public MessageDifferencer::IgnoreCriteria {
   }
 
  private:
-  std::unordered_set<std::string>* set_ptr;
+  std::unordered_set<std::string>* ignore_fields;
 };
 
-class FieldCompareCriteria : public MessageDifferencer::IgnoreCriteria {
+/*
+ *   Implement the IgnoreCriteria to compare the specific fields
+ */
+class CompareFieldImpl : public MessageDifferencer::IgnoreCriteria {
  public:
-  FieldCompareCriteria() { set_ptr = new std::unordered_set<std::string>; }
+  CompareFieldImpl() {
+    compare_fields = new std::unordered_set<std::string>;
+  }
 
-  void add_featureField(const std::string& field) { set_ptr->insert(field); }
+  // Add the field name into the compare_fields.
+  void AddField(const std::string& field) {
+    compare_fields->insert(field);
+  }
 
-//  void print(std::unordered_set<std::string> const &s){
-//    std::copy(s.begin(), s.end(), std::ostream_iterator<std::string>(std::cout, " "));
-//  }
-
-  bool IsIgnored(const Message& msg1, const Message& msg2,
-                 const FieldDescriptor* field,
-                 const std::vector<MessageDifferencer::SpecificField>&
-                     parent_fields) override
-  {
-    if (set_ptr->find(field->full_name()) == set_ptr->end()) {
+  bool IsIgnored(const Message& msg1, const Message& msg2, const FieldDescriptor* field,
+                 const std::vector<MessageDifferencer::SpecificField>& parent_fields) override {
+    // Check if the field name is in the compare_field.
+    if (compare_fields->find(field->full_name()) == compare_fields->end()) {
+      // if not in the comapre_field ignroe.
       return true;
     } else {
       return false;
@@ -110,17 +125,19 @@ class FieldCompareCriteria : public MessageDifferencer::IgnoreCriteria {
   }
 
  private:
-  std::unordered_set<std::string>* set_ptr;
+  std::unordered_set<std::string>* compare_fields;
 };
 
+
+/*
+ *   Implement the IgnoreCriteria to ignore field by regular expression.
+ */
 class RegexIgnoreCriteria : public MessageDifferencer::IgnoreCriteria {
  public:
   explicit RegexIgnoreCriteria(const std::string& regex) { str_ptr = regex; }
-  bool IsIgnored(const Message& msg1, const Message& msg2,
-                 const FieldDescriptor* field,
-                 const std::vector<MessageDifferencer::SpecificField>&
-                     parent_fields) override {
-    std::regex feature("^mes.*ress$");
+  bool IsIgnored(const Message& msg1, const Message& msg2, const FieldDescriptor* field,
+                 const std::vector<MessageDifferencer::SpecificField>& parent_fields) override {
+    std::regex feature(str_ptr);
     if (std::regex_match(field->full_name(), feature)) {
       return true;
     } else {
@@ -132,88 +149,130 @@ class RegexIgnoreCriteria : public MessageDifferencer::IgnoreCriteria {
   std::string str_ptr;
 };
 
-class KeyComparater : public MessageDifferencer::MapKeyComparator {
+/*
+ *  Implement the MapKeyComparator to compare two repeated field without same
+ *  index key field.
+
+ As the following example, we want to compare the field ExamScore
+ by Key [first_exam] in the first field and Key [second_exam] in the seconde field
+
+ [Message definition]:
+ message ExamScore{
+    string first_exam = 1;
+    int32 first_score = 2;
+    string second_exam = 3;
+    int32 seconde_score = 4;
+}
+
+ message TestEmployee{
+ repeated ExamScore exam_score = 1;
+ }
+
+
+[Content of First Message]:
+first_exam = "Mid-term"; <-------- first key
+first_score = 98;
+second_exam = "Final";
+seconde_score = 89;
+
+
+[Content of Second Message]:
+first_exam = "Final";
+first_score = 92;
+second_exam = "Mid-term"; <------ second key
+seconde_score = 91;
+
+ */
+
+class KeyComparatorImpl : public MessageDifferencer::MapKeyComparator {
  public:
-  KeyComparater(const FieldDescriptor* field_1,
-                const FieldDescriptor* field_2) {
-    keyField_1 = field_1;
-    keyField_2 = field_2;
+  /*
+   * Passing the [key] field for the first compare message and second [key] field for the second message
+   */
+  KeyComparatorImpl(const FieldDescriptor* fst_kfield, const FieldDescriptor* scd_kfield) {
+    first_key_field = fst_kfield;
+    second_key_field = scd_kfield;
   }
+
   typedef MessageDifferencer::SpecificField SpecificField;
+
   bool IsMatch(const Message& message1, const Message& message2,
                const std::vector<SpecificField>& parent_fields) const override {
-    const Reflection* reflection1 = message1.GetReflection();
-    const Reflection* reflection2 = message2.GetReflection();
+    // Get the reflection of the two message.
+    const Reflection* first_msg_reflection = message1.GetReflection();
+    const Reflection* second_msg_reflection = message2.GetReflection();
 
-    if (keyField_1->cpp_type() != keyField_2->cpp_type()) {
+    // If the type of two key field is different return false
+    if (first_key_field->cpp_type() != second_key_field->cpp_type()) {
       return false;
     }
 
-    FieldDescriptor::CppType type = keyField_1->cpp_type();
+    // Get the Cpp type of the field descriptor.
+    FieldDescriptor::CppType key_field_type = first_key_field->cpp_type();
 
+    // 1) compare the key field first and set the default as true.
     bool key_match = true;
-
-    switch (type) {
+    switch (key_field_type) {
       case FieldDescriptor::CPPTYPE_STRING: {
-        std::string field1 = reflection1->GetString(message1, keyField_1);
-        std::string field2 = reflection2->GetString(message2, keyField_2);
-        if (field1 != field2) {
+        std::string fst_field = first_msg_reflection->GetString(message1, first_key_field);
+        std::string sed_field = second_msg_reflection->GetString(message2, second_key_field);
+        if (fst_field != sed_field) {
           key_match = false;
         }
         break;
       }
       case FieldDescriptor::CPPTYPE_INT32: {
-        std::int32_t field1 = reflection1->GetInt32(message1, keyField_1);
-        std::int32_t field2 = reflection2->GetInt32(message2, keyField_2);
-        if (field1 != field2) {
+        std::int32_t fst_field = first_msg_reflection->GetInt32(message1, first_key_field);
+        std::int32_t sed_field = second_msg_reflection->GetInt32(message2, second_key_field);
+        if (fst_field != sed_field) {
           key_match = false;
         }
         break;
       }
       case FieldDescriptor::CPPTYPE_INT64: {
-        std::int64_t field1 = reflection1->GetInt64(message1, keyField_1);
-        std::int64_t field2 = reflection2->GetInt64(message2, keyField_2);
-        if (field1 != field2) {
+        std::int64_t fst_field = first_msg_reflection->GetInt64(message1, first_key_field);
+        std::int64_t sed_field = second_msg_reflection->GetInt64(message2, second_key_field);
+        if (fst_field != sed_field) {
           key_match = false;
         }
         break;
       }
       case FieldDescriptor::CPPTYPE_UINT32: {
-        std::uint32_t field1 = reflection1->GetUInt32(message1, keyField_1);
-        std::uint32_t field2 = reflection2->GetUInt32(message2, keyField_2);
-        if (field1 != field2) {
+        std::uint32_t fst_field = first_msg_reflection->GetUInt32(message1, first_key_field);
+        std::uint32_t sed_field = second_msg_reflection->GetUInt32(message2, second_key_field);
+        if (fst_field != sed_field) {
           key_match = false;
         }
         break;
       }
       case FieldDescriptor::CPPTYPE_UINT64: {
-        std::uint64_t field1 = reflection1->GetUInt64(message1, keyField_1);
-        std::uint64_t field2 = reflection2->GetUInt64(message2, keyField_2);
-        if (field1 != field2) {
+        std::uint64_t fst_field = first_msg_reflection->GetUInt64(message1, first_key_field);
+        std::uint64_t sed_field = second_msg_reflection->GetUInt64(message2, second_key_field);
+        if (fst_field != sed_field) {
           key_match = false;
         }
         break;
       }
       case FieldDescriptor::CPPTYPE_DOUBLE: {
-        double field1 = reflection1->GetDouble(message1, keyField_1);
-        double field2 = reflection2->GetDouble(message2, keyField_2);
-        if (field1 != field2) {
+        double fst_field = first_msg_reflection->GetDouble(message1, first_key_field);
+        double sed_field = second_msg_reflection->GetDouble(message2, second_key_field);
+        if (fst_field != sed_field) {
           key_match = false;
         }
         break;
       }
       case FieldDescriptor::CPPTYPE_FLOAT: {
-        float field1 = reflection1->GetFloat(message1, keyField_1);
-        float field2 = reflection2->GetFloat(message2, keyField_2);
-        if (field1 != field2) {
+        float fst_field = first_msg_reflection->GetFloat(message1, first_key_field);
+        float sed_field = second_msg_reflection->GetFloat(message2, second_key_field);
+        if (fst_field != sed_field) {
           key_match = false;
         }
         break;
       }
       case FieldDescriptor::CPPTYPE_BOOL: {
-        bool field1 = reflection1->GetBool(message1, keyField_1);
-        bool field2 = reflection2->GetBool(message2, keyField_2);
-        if (field1 != field2) {
+        bool fst_field = first_msg_reflection->GetBool(message1, first_key_field);
+        bool sed_field = second_msg_reflection->GetBool(message2, second_key_field);
+        if (fst_field != sed_field) {
           key_match = false;
         }
         break;
@@ -221,146 +280,180 @@ class KeyComparater : public MessageDifferencer::MapKeyComparator {
       case FieldDescriptor::CPPTYPE_ENUM:
         break;
       case FieldDescriptor::CPPTYPE_MESSAGE: {
-        const Message& sub_msg_1 =
-            reflection1->GetMessage(message1, keyField_1);
-        const Message& sub_msg_2 =
-            reflection2->GetMessage(message2, keyField_2);
+        const Message& first_sub_msg = first_msg_reflection->GetMessage(message1, first_key_field);
+        const Message& second_sub_msg = second_msg_reflection->GetMessage(message2, second_key_field);
 
         MessageDifferencer differencer;
-        if (!differencer.Compare(sub_msg_1, sub_msg_2)) {
+        if (!differencer.Compare(first_sub_msg, second_sub_msg)) {
           key_match = false;
         }
       }
     }
 
+    // If the key field don't match return false.
     if (!key_match){
       return false;
     }
+
+    // 2) remove the key field from two messages
+    // Because the message1 and message2 is "const Message" type so we need to create a new message
+    // as "Message" type and use the message reflection to remove the key field from this new message.
+    const Descriptor* descriptor = message1.GetDescriptor();
+
+    // Create two new "not const" Message
+    Message* new_msg_1 = message1.New();
+    Message* new_msg_2 = message2.New();
+
+
+    // Copy the value from the const message.
+    new_msg_1->ParseFromString(message1.SerializeAsString());
+    new_msg_2->ParseFromString(message2.SerializeAsString());
+
+    std::cout << new_msg_1->DebugString() << std::endl;
+    std::cout << new_msg_2->DebugString() << std::endl;
+
+
+    // Get the reflection of these two messages
+    const Reflection* new_reflection_1 = new_msg_1->GetReflection();
+    const Reflection* new_reflection_2 = new_msg_1->GetReflection();
+
+
+    // remove the key field from the new msg so the fields in the new message is [value] fields.
+    new_reflection_1->ClearField(new_msg_1, first_key_field);
+    new_reflection_2->ClearField(new_msg_2, second_key_field);
+
+    std::cout << new_msg_1->DebugString() << std::endl;
+    std::cout << new_msg_2->DebugString() << std::endl;
+
+
+    // Compare the new msg.
     auto* differencer = new MessageDifferencer();
-    if( !differencer->Compare(message1, message2) ){
+    if( !differencer->Compare(*new_msg_1, *new_msg_2) )
+    {
       return false;
     }
-
     return true;
   }
 
  private:
-  const FieldDescriptor* keyField_1;
-  const FieldDescriptor* keyField_2;
+  const FieldDescriptor* first_key_field;
+  const FieldDescriptor* second_key_field;
 };
 
-class MessageServiceImpl final : public DifferentialServer::Service
+class MessageServiceImpl final : public ServerDifferential::Service
 {
-  Status GetConnect(ServerContext* context, const MsgRequest* request,
-                    MsgReply* reply) override {
+  Status GetConnect(ServerContext* context, const MsgRequest* request, MsgReply* reply) override {
     std::string prefix("1234");
     reply->set_reply(prefix + request->request());
     return Status::OK;
   }
 
-  Status DefaultDifferentialService(ServerContext* context,
-                                    const DiffMsgRequest* user_request,
-                                    DiffMsgReply* resDiff) override {
-    // read the file descriptorProto
-    FileDescriptorProto file_descriptor_proto;
-    file_descriptor_proto.ParseFromString(
-        user_request->file_descriptor_proto(0));
+  Status DefaultDifferentialService(ServerContext* context, const DiffRequest* diff_request, DiffResponse* diff_response) override {
+    /****************************************************************************
+     *
+     * 1) Dynamically re-generate the compared two messages.
+     *
+     ****************************************************************************/
 
-    // fetch all dependency filedescriptorProto
-    DescriptorPool descriptorPool;
-    for (int i = 1; i < user_request->file_descriptor_proto_size(); i++) {
+    // Reading the file descriptorProto and their dependency and saving into the descritor pool.
+    FileDescriptorProto file_descriptor_proto;
+    // The first element is the file descriptor proto.
+    file_descriptor_proto.ParseFromString(diff_request->file_descriptor_proto(0));
+
+    // Use descriptor pool to get all the dependency of the file descriptor proto.
+    DescriptorPool descriptor_pool;
+    for (int i = 1; i < diff_request->file_descriptor_proto_size(); i++) {
       FileDescriptorProto dependency_Proto;
-      dependency_Proto.ParseFromString(user_request->file_descriptor_proto(i));
-      descriptorPool.BuildFile(dependency_Proto);
+      dependency_Proto.ParseFromString(diff_request->file_descriptor_proto(i));
+      descriptor_pool.BuildFile(dependency_Proto);
     }
 
-    // Build the file descriptor.
-    const FileDescriptor* file_descriptor = descriptorPool.BuildFile(file_descriptor_proto);
+    // Build the file descriptor by the file descriptor and descriptor pool.
+    const FileDescriptor* file_descriptor = descriptor_pool.BuildFile(file_descriptor_proto);
 
     // Read the name of the message descriptor
-    std::string name_of_message_descriptor;
-    name_of_message_descriptor = user_request->name_of_message_descriptor();
+    std::string name_of_message_descriptor = diff_request->name_of_message_descriptor();
 
-    // Generate the message descriptor by the name
+    // Using the name of the message descriptor to generate the message descriptor
     const Descriptor* descriptor =file_descriptor->FindMessageTypeByName(name_of_message_descriptor);
 
-    // Get the the abstract Message instance
-    google::protobuf::DynamicMessageFactory factory(&descriptorPool);
+    // Get the the abstract Message instance by Message factory
+    google::protobuf::DynamicMessageFactory factory(&descriptor_pool);
     const Message* msg = factory.GetPrototype(descriptor);
 
-    // Parer the base and test message from the log
-    Message* msg_base = msg->New();
-    msg_base->ParseFromString(user_request->message_1());
+    // Parse the base and test message from the log
+    Message* msg_first = msg->New();
+    msg_first->ParseFromString(diff_request->first_message());
 
-    Message* msg_test = msg->New();
-    msg_test->ParseFromString(user_request->message_2());
+    Message* msg_second = msg->New();
+    msg_second->ParseFromString(diff_request->second_message());
 
+    /*************************************************************************
+     *
+     * 2) compare the two message
+     *
+     *************************************************************************/
     // Compare the two message
-    MessageDifferencer differ_obj;
+    MessageDifferencer differencer;
 
     // Output string for compare result.
-    std::string differRes;
-    differ_obj.ReportDifferencesToString(&differRes);
-    bool diff_flag = differ_obj.Compare(*msg_base, *msg_test);
+    std::string diff_result;
+    differencer.ReportDifferencesToString(&diff_result);
 
-    // Set the compare result and return to the user.
-//    resDiff->set_result(differRes);
+    // Compare the two messages.
+    bool diff_flag = differencer.Compare(*msg_first, *msg_second);
 
     // Set the compare result and return to the user.
     if (diff_flag) {
-      resDiff->set_result("SAME");
+      diff_response->set_result("SAME");
     }
     else {
-      resDiff->set_result(differRes);
+      diff_response->set_result(diff_result);
     }
 
     return Status::OK;
-
-
   }
 
-  Status DifferentialService(ServerContext* context, const DiffMsgRequest* user_request,
-                             DiffMsgReply* resDiff) override {
-    /****************************************
+  Status DifferentialService(ServerContext* context, const DiffRequest* diff_request, DiffResponse* diff_response) override {
+    /****************************************************************************
      *
-     * Parse the user messages
+     * 1) Dynamically re-generate the compared two messages.
      *
-     ****************************************/
-    // read the file descriptorProto
-    FileDescriptorProto file_descriptor_proto;
-    file_descriptor_proto.ParseFromString(user_request->file_descriptor_proto(0));
+     ****************************************************************************/
 
-    // fetch all dependency filedescriptorProto
-    DescriptorPool descriptorPool;
-    for (int i = 1; i < user_request->file_descriptor_proto_size(); i++) {
+    // Reading the file descriptorProto and their dependency and saving into the descritor pool.
+    FileDescriptorProto file_descriptor_proto;
+    // The first element is the file descriptor proto.
+    file_descriptor_proto.ParseFromString(diff_request->file_descriptor_proto(0));
+
+    // Use descriptor pool to get all the dependency of the file descriptor proto.
+    DescriptorPool descriptor_pool;
+    for (int i = 1; i < diff_request->file_descriptor_proto_size(); i++) {
       FileDescriptorProto dependency_Proto;
-      dependency_Proto.ParseFromString(user_request->file_descriptor_proto(i));
-      descriptorPool.BuildFile(dependency_Proto);
+      dependency_Proto.ParseFromString(diff_request->file_descriptor_proto(i));
+      descriptor_pool.BuildFile(dependency_Proto);
     }
 
-    // Build the file descriptor.
-    const FileDescriptor* file_descriptor =
-        descriptorPool.BuildFile(file_descriptor_proto);
+    // Build the file descriptor by the file descriptor and descriptor pool.
+    const FileDescriptor* file_descriptor = descriptor_pool.BuildFile(file_descriptor_proto);
 
     // Read the name of the message descriptor
-    std::string name_of_message_descriptor;
-    name_of_message_descriptor = user_request->name_of_message_descriptor();
+    std::string name_of_message_descriptor = diff_request->name_of_message_descriptor();
 
-    // Generate the message descriptor by the name
-    const Descriptor* descriptor =
-        file_descriptor->FindMessageTypeByName(name_of_message_descriptor);
+    // Using the name of the message descriptor to generate the message descriptor
+    const Descriptor* descriptor = file_descriptor->FindMessageTypeByName(name_of_message_descriptor);
 
-    // Get the the abstract Message instance
-    google::protobuf::DynamicMessageFactory factory(&descriptorPool);
+    // Get the the abstract Message instance by Message factory
+    google::protobuf::DynamicMessageFactory factory(&descriptor_pool);
     const Message* msg = factory.GetPrototype(descriptor);
 
     // Parer the base and test message from the log
     Message* msg_base = msg->New();
-    msg_base->ParseFromString(user_request->message_1());
+    msg_base->ParseFromString(diff_request->first_message());
 //    std::cout << "Base Message: \n" << msg_base->DebugString() << std::endl;
 
     Message* msg_test = msg->New();
-    msg_test->ParseFromString(user_request->message_2());
+    msg_test->ParseFromString(diff_request->second_message());
 //    std::cout << "Test Message: \n" << msg_test->DebugString() << std::endl;
 
     /************************************************************************
@@ -380,9 +473,8 @@ class MessageServiceImpl final : public DifferentialServer::Service
     differencer.set_report_ignores(false);
 
     // User implements the ignore criteria.
-    if (user_request->has_user_ignore()) {
-      const differentialservice::IgnoreCriteria& user_ignoreCriteria =
-          user_request->user_ignore();
+    if (diff_request->has_user_ignore()) {
+      const DifferentialService::IgnoreCriteria& user_ignoreCriteria = diff_request->user_ignore();
 
       // IgnoreCriteria from protobuf MessageDifferencer.
       MessageDifferencer::IgnoreCriteria* ignoreCriteria = nullptr;
@@ -391,21 +483,21 @@ class MessageServiceImpl final : public DifferentialServer::Service
       if (user_ignoreCriteria.ignore_fields_list_size() != 0) {
         // 1) Check the IgnoreFlag set by user. The IgnoreFlag is a binary option.
         // ...FLAG_IGNORE or ...FLAG_COMPARE
-        if (user_ignoreCriteria.flag() == differentialservice::IgnoreCriteria_IgnoreFlag_FLAG_IGNORE)
+        if (user_ignoreCriteria.flag() == DifferentialService::IgnoreCriteria_IgnoreFlag_FLAG_IGNORE)
         {
-          auto* tmp_criteria = new FieldIgnoreCriteria();
+          auto* tmp_criteria = new IgnoreFieldImpl();
           // loop the fields and insert to the tmp_criteria
           for (int i = 0; i < user_ignoreCriteria.ignore_fields_list_size(); ++i) {
-            tmp_criteria->add_featureField(user_ignoreCriteria.ignore_fields_list(i));
+            tmp_criteria->AddField(user_ignoreCriteria.ignore_fields_list(i));
           }
           ignoreCriteria = tmp_criteria;
         }
         else
           // IgnoreCriteria_IgnoreFlag_FLAG_COMPARE
         {
-          auto* tmp_criteria = new FieldCompareCriteria();
+          auto* tmp_criteria = new CompareFieldImpl();
           for (int i = 0; i < user_ignoreCriteria.ignore_fields_list_size(); ++i) {
-            tmp_criteria->add_featureField(user_ignoreCriteria.ignore_fields_list(i));
+            tmp_criteria->AddField(user_ignoreCriteria.ignore_fields_list(i));
           }
           ignoreCriteria = tmp_criteria;
         }
@@ -418,8 +510,7 @@ class MessageServiceImpl final : public DifferentialServer::Service
       MessageDifferencer::IgnoreCriteria* criteria_regex = nullptr;
 
       if (!user_ignoreCriteria.regex().empty()) {
-        auto* tmp_criteria =
-            new RegexIgnoreCriteria(user_ignoreCriteria.regex());
+        auto* tmp_criteria = new RegexIgnoreCriteria(user_ignoreCriteria.regex());
         criteria_regex = tmp_criteria;
       }
 
@@ -439,28 +530,33 @@ class MessageServiceImpl final : public DifferentialServer::Service
     differencer.set_report_moves(false);
 
     // Check the repeated fields list.
-    if (user_request->repeated_field_size()) {
+    if (diff_request->repeated_field_size()) {
+
       // Get the number of the fields.
-      int num = user_request->repeated_field_size();
+      int num = diff_request->repeated_field_size();
       for (int i = 0; i < num; ++i) {
-        // Get the repeated field Tuple <flag, field_name>
-        // flag is binary option ...FLAG_LIST or ...FLAG_SET
-        const differentialservice::RepeatedFieldTuple& fieldTuple =
-            user_request->repeated_field(i);
-        if (fieldTuple.flag() ==
-            differentialservice::RepeatedFieldTuple_TreatAsFlag_FLAG_LIST)
+
+        // Get the repeated field Tuple <flag, field_name> flag is binary option ...FLAG_LIST or ...FLAG_SET
+        const DifferentialService::RepeatedFieldTuple& repeated_field_tuple = diff_request->repeated_field(i);
+
+        if (repeated_field_tuple.flag() == DifferentialService::RepeatedFieldTuple_TreatAsFlag_FLAG_LIST)
         {
-          const std::string& field_name = fieldTuple.field_name();
-          const FieldDescriptor* field_dsp =
-              GetFieldDescriptor(*msg_base, field_name);
+          // Get the field name
+          const std::string& field_name = repeated_field_tuple.field_name();
+          // Get the field descriptor by name.
+
+          // [ATTENTION] "GetFieldDescriptor" is a helper function declared at the top of file.
+
+          const FieldDescriptor* field_dsp = GetFieldDescriptor(*msg_base, field_name);
 
           // Tell the differencer treat the field as LIST
           differencer.TreatAsList(field_dsp);
 
         } else {  // RepeatedFieldTuple_TreatAsFlag_FLAG_LIST
-          const std::string& field_name = fieldTuple.field_name();
-          const FieldDescriptor* field_dsp =
-              GetFieldDescriptor(*msg_base, field_name);
+          // Get the field name
+          const std::string& field_name = repeated_field_tuple.field_name();
+          // Get the field descriptor by name.
+          const FieldDescriptor* field_dsp = GetFieldDescriptor(*msg_base, field_name);
 
           // Tell the differencer treat the field as SET
           differencer.TreatAsSet(field_dsp);
@@ -470,21 +566,20 @@ class MessageServiceImpl final : public DifferentialServer::Service
 
     /*******************************************************
      *
-     * Check the repeated field comparison methods (MAP)
+     * Check the repeated field will be treated as a map for diffing purposes.
      *
      *******************************************************/
-    // if set the map_comapre is set by user.
-    if (user_request->map_compare_size() != 0) {
-      int num = user_request->map_compare_size();
+    // if set the map_compare is set by user.
+    if (diff_request->map_compare_size() != 0) {
+      int num = diff_request->map_compare_size();
       for (int i = 0; i < num; ++i) {
         // Get the MapCompareTuple <name of repeated field, one/more sub field as map>
-        const differentialservice::MapCompareTuple& tuple =
-            user_request->map_compare(i);
+        const DifferentialService::MapCompareTuple& tuple = diff_request->map_compare(i);
 
-        // Get the repeated filed descriptor
-        const std::string& field_name = tuple.name_of_repeated_field();
+        // Get the repeated filed name
+        const std::string& field_name = tuple.repeated_field();
         // get the field descriptor by user input message(*msg), and field name.
-        // "GetFieldDescriptor" is a helper function declared at the top of file.
+
         const FieldDescriptor* field_dsp = GetFieldDescriptor(*msg, field_name);
 
         // Get the message descriptor of the repeated filed.
@@ -492,11 +587,12 @@ class MessageServiceImpl final : public DifferentialServer::Service
 
         // User could select one/more sub-field as the Map field.
         // if the map key is a single sub-field.
-        if (tuple.name_of_sub_field_size() == 1) {
-          const std::string& key_field_name = tuple.name_of_sub_field(0);
+        if (tuple.key_field_size() == 1) {
+          const std::string& key_field_name = tuple.key_field(0);
+
           if (tmp_dsp->FindFieldByName(key_field_name) != nullptr) {
-            const FieldDescriptor* key_field =
-                tmp_dsp->FindFieldByName(key_field_name);
+            const FieldDescriptor* key_field = tmp_dsp->FindFieldByName(key_field_name);
+
             differencer.TreatAsMap(field_dsp, key_field);
           } else {
             // ToDo: Add a error log in messageservice::result
@@ -508,9 +604,10 @@ class MessageServiceImpl final : public DifferentialServer::Service
         else {
 
           auto* key_fields = new std::vector<const FieldDescriptor*>;
-          int key_num = tuple.name_of_sub_field_size();
-          for (int j = 0; j < key_num; ++j) {
-            const std::string& key_field_name = tuple.name_of_sub_field(j);
+
+          for (int j = 0; j < tuple.key_field_size(); ++j) {
+            const std::string& key_field_name = tuple.key_field(j);
+
             if (tmp_dsp->FindFieldByName(key_field_name) != nullptr) {
               const FieldDescriptor* key_field =
                   tmp_dsp->FindFieldByName(key_field_name);
@@ -527,15 +624,55 @@ class MessageServiceImpl final : public DifferentialServer::Service
       }
     }
 
+
+
+    /*************************************************************
+     *
+     * Check the repeated field be treated as a map if [key] field don't appear at the same index.
+     *
+     *************************************************************/
+
+    if (diff_request->has_map_compare_not_same_index()){
+      const DifferentialService::MapCompareNotSameIndex& map_not_same_index = diff_request->map_compare_not_same_index();
+
+      // 1) Get the repeated field name. (TestEmployee.exam_score)
+      const std::string& field_name = map_not_same_index.repeated_field();
+      // Get the field descriptor for the repeated field.
+      const FieldDescriptor* field_descriptor = GetFieldDescriptor(*msg, field_name);
+
+      // Check the field descriptor is not nullptr.
+      if (field_descriptor != nullptr){
+
+        // 2) Get the first key field name.(TestEmployee.exam_score.first_exam)
+        const std::string& first_key_field_name = map_not_same_index.first_key_field();
+        // Get the field descriptor for the first key field.
+        const FieldDescriptor* first_key_field_descriptor = GetFieldDescriptor(*msg, first_key_field_name);
+
+
+        // 3) Get the second key field name.(TestEmployee.exam_score.second_exam)
+        const std::string& second_key_field_name = map_not_same_index.second_key_field();
+        // Get the field descriptor for the second key field.
+        const FieldDescriptor* second_key_field_descriptor = GetFieldDescriptor(*msg, second_key_field_name);
+
+        // 4) Check the key field is not nullptr.
+        if (first_key_field_descriptor != nullptr && second_key_field_descriptor != nullptr){
+          const MessageDifferencer::MapKeyComparator* map_key_comparator = new KeyComparatorImpl(first_key_field_descriptor, second_key_field_descriptor);
+
+          // Add the comparator in to the differencer.
+          differencer.TreatAsMapUsingKeyComparator(field_descriptor, map_key_comparator);
+        }
+      }
+    }
+
     /*******************************************************
      *
      *  Check the float point number comparison
      *
      *******************************************************/
     // if float_comparison is set
-    if (user_request->has_fraction_margin()) {
-      const differentialservice::FloatNumComparison& fraction_Margin =
-          user_request->fraction_margin();
+    if (diff_request->has_fraction_margin()) {
+      const DifferentialService::FloatNumComparison& fraction_Margin =
+          diff_request->fraction_margin();
 
       double fraction = fraction_Margin.fraction();
       double margin = fraction_Margin.margin();
@@ -551,27 +688,6 @@ class MessageServiceImpl final : public DifferentialServer::Service
       differencer.set_field_comparator(fieldComparator);
     }
 
-    /*
-     * Try~~
-     */
-
-//    const FieldDescriptor* specificField = descriptor->FindFieldByName("foo");
-//
-//    const Descriptor* specificField_type = specificField->message_type();
-//    const FieldDescriptor* key_field_1 =
-//        specificField_type->FindFieldByName("exam1");
-//    const FieldDescriptor* key_field_2 =
-//        specificField_type->FindFieldByName("exam2");
-//
-//    if (key_field_1 != nullptr && key_field_2 != nullptr) {
-//      const MessageDifferencer::MapKeyComparator* Comparater =
-//          new KeyComparater(key_field_1, key_field_2);
-//
-//      differ_obj.TreatAsMapUsingKeyComparator(specificField, Comparater);
-//    } else {
-//      // ToDo: Error message
-//    }
-
 
     /*******************************************************
      *
@@ -579,16 +695,16 @@ class MessageServiceImpl final : public DifferentialServer::Service
      *
      *******************************************************/
     // Output string for compare result.
-    std::string differRes;
-    differencer.ReportDifferencesToString(&differRes);
+    std::string diff_result;
+    differencer.ReportDifferencesToString(&diff_result);
     bool diff_flag = differencer.Compare(*msg_base, *msg_test);
 
     // Set the compare result and return to the user.
     if (diff_flag) {
-      resDiff->set_result("SAME");
+      diff_response->set_result("SAME");
     }
     else {
-      resDiff->set_result(differRes);
+      diff_response->set_result(diff_result);
     }
 
     return Status::OK;

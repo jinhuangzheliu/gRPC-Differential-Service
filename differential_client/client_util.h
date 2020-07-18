@@ -27,47 +27,48 @@ using google::protobuf::FileDescriptorProto;
 using google::protobuf::Message;
 
 // using namespace from the differential service .proto file
-using differentialservice::DiffMsgRequest;
+using DifferentialService::DiffRequest;
 
-// using namespace form the differential test .proto file.
-using differential_test::company;
-using differential_test::dependent_info;
-using differential_test::education_info;
-using differential_test::employee;
-using differential_test::field_set;
 
 /*
  *  This class contains various utilities to use the Differential Service.
  */
 
-class Client_util {
+class ClientUtil {
  public:
   /*
    * Write the input messages to the request of differential service.
+   *
+   * In this method, 1) the user input message will be serialized to string type
+   * of value 2) get the descriptor of user input message. 3) get the file
+   * descriptor proto and all its dependency then serialized to string type of
+   * value. all these object will be wrote into the differential request message
+   * and return.
+   *
    * [Input Args]: 1) protobuf message from user.
    *               2) protobuf message from user.
    * [Return]: differential request message.
    */
-  static DiffMsgRequest WriteMsgToDiffRequest(Message& msg_1, Message& msg_2);
+  static DiffRequest WriteMsgToDiffRequest(const Message& msg_1,
+                                           const Message& msg_2);
 
   /*
-   * This method is used to ignore one / more fields during the differential service.
-   * [Input Args]: 1) the object of differential request message.
-   *                        2) a string type vector saving the name of the field.
-   * [Return]: void
+   * This method is used to ignore one / more fields during the differential
+   * service. [Input Args]: 1) the object of differential request message. 2) a
+   * string type vector saving the name of the field. [Return]: void
    */
-  static void IgnoreFields(DiffMsgRequest& diff_request,
-                           std::vector<std::string>& field_list);
+  static void IgnoreFields(DiffRequest* diff_request,
+                           const std::vector<std::string>& field_list);
 
   /*
-   * This method is used to only compare one / more fields during the differential service.
-   * [Input Args]: 1) the object of differential request message.
-   *               2) a string type vector saving the name of the field.
-   * [Return]: void
+   * This method is used to only compare one / more fields during the
+   * differential service. [Input Args]: 1) the object of differential request
+   * message. 2) a string type vector saving the name of the field. [Return]:
+   * void
    */
 
-  static void CompareFields(DiffMsgRequest& diff_request,
-                            std::vector<std::string>& field_list);
+  static void CompareFields(DiffRequest* diff_request,
+                            const std::vector<std::string>& field_list);
 
   /*
    * This method is used to ignore some specific fields by regular expression.
@@ -75,7 +76,8 @@ class Client_util {
    *               2) a string type regular expression.
    * [Return]: void
    */
-  static void RegexCriteria(DiffMsgRequest* diff_request, std::string& regex);
+  static void RegexCriteria(DiffRequest* diff_request,
+                            const std::string& regex);
 
   /*
    * This method is used to set the repeated field as list-based of set-based in
@@ -85,8 +87,9 @@ class Client_util {
    * as set based comparison. 3) the name of the repeated field. (string type)
    * [Return]: void
    */
-  static void TreatRepeatedFieldAsListOrSet(DiffMsgRequest& diff_request,
-                                            int flag, std::string& field_name);
+  static void TreatRepeatedFieldAsListOrSet(DiffRequest* diff_request,
+                                            const int flag,
+                                            const std::string& field_name);
 
   /*
    * This method is used to set the repeated field as Map-Value based in
@@ -94,9 +97,9 @@ class Client_util {
    * message. 2) the repeated field name(string type). 3) a string type vector
    * saving the name of the sub-fields as the Map fields. [Return]: void
    */
-  static void TreatRepeatedFieldAsMap(DiffMsgRequest& diff_request,
-                                      std::string& field_name,
-                                      std::vector<std::string>& sub_field_name);
+  static void TreatRepeatedFieldAsMap(
+      DiffRequest* diff_request, const std::string& field_name,
+      const std::vector<std::string>& sub_field_name);
 
   /*
    * This method is used to set the fraction and margin to compare the double /
@@ -105,8 +108,8 @@ class Client_util {
    *               3) maring(double)
    * [Return]: void
    */
-  static void SetFractionAndMargin(DiffMsgRequest& diff_request,
-                                   double fraction, double margin);
+  static void SetFractionAndMargin(DiffRequest* diff_request,
+                                   const double fraction, const double margin);
 };
 
 #endif  // DIFFERENTIAL_SERVICE_CLIENT_UTIL_H

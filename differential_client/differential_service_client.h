@@ -2,8 +2,8 @@
 // Created by jinhuangzheliu on 7/13/20.
 //
 
-#ifndef DIFFERENTIAL_CLIENT_SERVICECLIENT_H
-#define DIFFERENTIAL_CLIENT_SERVICECLIENT_H
+#ifndef DIFFERENTIAL_CLIENT_DIFFERENTIAL_SERVICE_CLIENT_H
+#define DIFFERENTIAL_CLIENT_DIFFERENTIAL_SERVICE_CLIENT_H
 
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/descriptor.pb.h>
@@ -23,24 +23,27 @@ using grpc::ClientContext;
 using grpc::Status;
 
 // using namespace from the differential service .proto file
-using differentialservice::DifferentialServer;
-using differentialservice::MsgRequest;
-using differentialservice::MsgReply;
-using differentialservice::DiffMsgRequest;
-using differentialservice::DiffMsgReply;
+using DifferentialService::ServerDifferential;
+using DifferentialService::MsgRequest;
+using DifferentialService::MsgReply;
+using DifferentialService::DiffRequest;
+using DifferentialService::DiffResponse;
 
 
-class ServiceClient {
+class DifferentialServiceClient {
  public:
-  // Constructor for client derived from the stub of DifferentialServer
-  explicit ServiceClient(std::string& target_address);
+  // Constructor for client derived from the stub of ServerDifferential
+  explicit DifferentialServiceClient(const std::string& target_address);
+
+  // Initial the connection to the server
+  bool InitializeConnection();
 
   /*
    * Default message differential service.
    * [Input Args]: the object of differential request message.
    * [Return]: the object of differential reply message.
    */
-  DiffMsgReply DefaultDifferentialService(DiffMsgRequest& diff_request);
+  DiffResponse DefaultDifferentialService(const DiffRequest& diff_request);
 
   /*
    * Differential service. User can set their criteria to
@@ -50,13 +53,10 @@ class ServiceClient {
    * [Input Args]: the object of differential request message.
    * [Return]: the object of differential reply message.
    */
-  DiffMsgReply DifferentialService(DiffMsgRequest& diff_request);
+  DiffResponse DifferentialService(const DiffRequest& diff_request);
 
  private:
-  std::unique_ptr<DifferentialServer::Stub> stub_;
-
-  // Initial the connection to the server
-  bool InitializeConnection(std::string& target_address);
+  std::unique_ptr<ServerDifferential::Stub> stub_;
 };
 
-#endif  // DIFFERENTIAL_CLIENT_SERVICECLIENT_H
+#endif  // DIFFERENTIAL_CLIENT_DIFFERENTIAL_SERVICE_CLIENT_H

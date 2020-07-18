@@ -7,18 +7,18 @@ set(SOURCE_FILES differential_client.cc)
 add_executable(differential_client_cpp ${SOURCE_FILES})
 
 add_library(
-        ServiceClient_lib STATIC
-        ServiceClient.h
-        ServiceClient.cpp
+        differential_service_client_lib STATIC
+        differential_service_client.h
+        differential_service_client.cpp
 )
-target_link_libraries(differential_client_cpp ServiceClient_lib)
+target_link_libraries(differential_client_cpp differential_service_client_lib)
 
 add_library(
-        Client_util_lib STATIC
-        Client_util.h
-        Client_util.cpp
+        client_util_lib STATIC
+        client_util.h
+        client_util.cpp
 )
-target_link_libraries(differential_client_cpp Client_util_lib)
+target_link_libraries(differential_client_cpp client_util_lib)
 
 # Add the libraries from differential_client_lib
 include_directories(differential_client_lib)
