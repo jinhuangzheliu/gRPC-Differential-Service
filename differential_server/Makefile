@@ -24,7 +24,7 @@ vpath %.proto $(PROTOS_PATH)
 
 all: differential_server_cpp
 
-differential_server_cpp: differential_server_lib/differential_server.pb.o differential_server_lib/differential_server.grpc.pb.o differential_server_lib/differential_service.pb.o differential_server_lib/differential_service.grpc.pb.o differential_server.o
+differential_server_cpp:differential_server_lib/differential_service.pb.o differential_server_lib/differential_service.grpc.pb.o differential_server.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 %.grpc.pb.cc: %.proto
