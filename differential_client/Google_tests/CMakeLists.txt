@@ -22,7 +22,7 @@ set(_REFLECTION grpc++_reflection)
 
 
 # adding the Google_Tests_run target
-add_executable(Google_Tests_run test1.cpp test2.cpp)
+add_executable(Google_Tests_run unit_test_diff.cpp)
 
 # linking Google_Tests_run with DateConverter_lib which will be tested
 target_link_libraries(Google_Tests_run differential_service_client_lib)
