@@ -54,6 +54,10 @@ We support a default test program for testing the connection between the client 
 
 > $ ./differential_client_cpp
 
+### Unit test for Differential Service
+We perform a total 50 unit-tests for the differential service. You can leverage a IDE to implement these unit test. The unit test file locate at:
+
+>(YOUR_DIR/grpc/example/cpp/differential_client/Google_tests/unit_test_diff.cpp)
 
 
 
