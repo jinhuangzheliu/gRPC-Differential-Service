@@ -7,7 +7,9 @@ Our differential service is established on the gRPC framework by C++ language. T
 
 You can follow the gRPC offical [reference](https://github.com/grpc/grpc "reference") to install all these prerequisites.
 
-## Differential Service
-###
+## Client-Side Process
+After installing all prerequisites you need to download the folder
+> differential_client
+to you local grpc directory.
 
 
