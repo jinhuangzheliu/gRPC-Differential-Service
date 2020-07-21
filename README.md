@@ -11,12 +11,13 @@ You can follow the gRPC offical [reference](https://github.com/grpc/grpc "refere
 The .proto file of the differential service saved in the 'protos' folder at the root of this repo. Download the 'differential_service.proto' to your local grpc directory.
 >(YOUR_DIR/grpc/exmaples/proto/).
 
-We support a testing testing protobuf message defined in "differential_test.proto" for testing our service. Download the 'differential_service.proto' to your local grpc directory.
+We support a testing protobuf message defined in "differential_test.proto" for testing our service. Download the 'differential_service.proto' to your local grpc directory.
 >(YOUR_DIR/grpc/exmaples/proto/).
 
 
 ## Client-Side Process
-We support a testing .proto file 
-After installing all prerequisites you need to download the folder 'differential_client' to you local 'grpc/example/cpp' directory.
+Download the folder 'differential_client' to you local 'grpc/example/cpp' directory and execute the following commands under the differential_client directory.
+> protoc -I=../../protos --grpc_out=./differential_client_lib/ --plugin=protoc-gen-grpc='which grpc_cpp_plugin' ../../protos/differential_test.proto ../../protos/differential_service.proto
+
 
 
