@@ -41,6 +41,7 @@ and execute the following commands under the differential_server directory.
 Under the differential_server directory make the server-side process as follows:
 
 > $ make
+
 > $ ./differential_server_cpp
 
 If the process running successfully the follow output will preseted in your terminal window:
@@ -50,6 +51,7 @@ If the process running successfully the follow output will preseted in your term
 We support a default test program for testing the connection between the client and server in your system. From another termial, make the differential_client_cpp under the differenital_client directory.
 
 > make
+
 > $ ./differential_client_cpp
 
 
