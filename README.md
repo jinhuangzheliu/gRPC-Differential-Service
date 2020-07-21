@@ -22,9 +22,9 @@ Download the folder 'differential_client' to you local directory:
 
 and execute the following commands under the differential_client directory.
 
-> protoc -I=../../protos --grpc_out=./differential_client_lib/ --plugin=protoc-gen-grpc='which grpc_cpp_plugin' ../../protos/differential_test.proto ../../protos/differential_service.proto
+> $ protoc -I=../../protos --grpc_out=./differential_client_lib/ --plugin=protoc-gen-grpc='which grpc_cpp_plugin' ../../protos/differential_test.proto ../../protos/differential_service.proto
 
-> protoc -I=../../protos --cpp_out=./differential_client_lib/ ../../protos/differential_test.proto ../../protos/differential_service.proto
+> $ protoc -I=../../protos --cpp_out=./differential_client_lib/ ../../protos/differential_test.proto ../../protos/differential_service.proto
 
 ## Server-Side Process
 Download the folder 'differential_server' to you local directory:
@@ -33,8 +33,16 @@ Download the folder 'differential_server' to you local directory:
 
 and execute the following commands under the differential_server directory.
 
-> protoc -I=../../protos --grpc_out=./differential_server_lib/ --plugin=protoc-gen-grpc='which grpc_cpp_plugin' ../../protos/differential_service.proto
+> $ protoc -I=../../protos --grpc_out=./differential_server_lib/ --plugin=protoc-gen-grpc='which grpc_cpp_plugin' ../../protos/differential_service.proto
 
-> protoc -I=../../protos --cpp_out=./differential_server_lib/ ../../protos/differential_service.proto
+> $ protoc -I=../../protos --cpp_out=./differential_server_lib/ ../../protos/differential_service.proto
+
+## Test the Differential Service
+Under the differential_server directory make the server-side process as follows:
+> $ make
+If the process running successfully the follow output will preseted in your terminal window:
+> Server Listening on 0.0.0.0:50053
+
+
 
 
