@@ -39,8 +39,11 @@ and execute the following commands under the differential_server directory.
 
 ## Test the Differential Service
 Under the differential_server directory make the server-side process as follows:
+
 > $ make
+
 If the process running successfully the follow output will preseted in your terminal window:
+
 > Server Listening on 0.0.0.0:50053
 
 
