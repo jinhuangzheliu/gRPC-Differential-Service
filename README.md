@@ -16,8 +16,25 @@ We support a testing protobuf message defined in "differential_test.proto" for t
 
 
 ## Client-Side Process
-Download the folder 'differential_client' to you local 'grpc/example/cpp' directory and execute the following commands under the differential_client directory.
+Download the folder 'differential_client' to you local directory:
+
+>(YOUR_DIR/grpc/example/cpp)
+
+and execute the following commands under the differential_client directory.
+
 > protoc -I=../../protos --grpc_out=./differential_client_lib/ --plugin=protoc-gen-grpc='which grpc_cpp_plugin' ../../protos/differential_test.proto ../../protos/differential_service.proto
 
+> protoc -I=../../protos --cpp_out=./differential_client_lib/ ../../protos/differential_test.proto ../../protos/differential_service.proto
+
+## Server-Side Process
+Download the folder 'differential_server' to you local directory:
+
+>(YOUR_DIR/grpc/example/cpp)
+
+and execute the following commands under the differential_server directory.
+
+> protoc -I=../../protos --grpc_out=./differential_server_lib/ --plugin=protoc-gen-grpc='which grpc_cpp_plugin' ../../protos/differential_service.proto
+
+> protoc -I=../../protos --cpp_out=./differential_server_lib/ ../../protos/differential_service.proto
 
 
