@@ -4,6 +4,11 @@
 #include <google/protobuf/dynamic_message.h>
 #include <google/protobuf/message.h>
 #include <grpcpp/grpcpp.h>
+#include <time.h>
+#include <bits/stdc++.h>
+#include <stdio.h>
+#include <math.h>
+
 
 #include <fstream>
 #include <iostream>
@@ -43,6 +48,7 @@ int main(int argc, char* argv[]) {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
 
+
 /*
   std::cout << "Hello World!" << std::endl;
 
@@ -74,7 +80,7 @@ int main(int argc, char* argv[]) {
   target_str = "0.0.0.0:50053";
 
   // Initial the service client instance.
-  DifferentialServiceClient service_client(target_str);
+  DifferentialServiceClient service_client;
 
   bool connection_status = service_client.InitializeConnection();
 
@@ -87,13 +93,77 @@ int main(int argc, char* argv[]) {
    *  Write two message for testing.
    *  The .proto file of testing message is located in ../protos/differential_test.proto
    */
-  TestEmployee message_first;
+  for (int j = 1; j <= 6; ++j) {
+    std::clock_t start, end;
 
-  ExamScore* exam_score_1 = message_first.add_exam_score();
-  exam_score_1->set_exam1("Mid");
-  exam_score_1->set_score1(98);
-  exam_score_1->set_exam2("Final");
-  exam_score_1->set_score2(86);
+    double num = pow(10.0, j);
+    int num_1 = (int)num;
+    std::cout << num_1 << std::endl;
+    TestEmployee message_first;
+    TestEmployee message_second;
+
+//  std::time(&start);
+    start = clock();
+//  std::ios_base::sync_with_stdio(false);
+
+    for (int i = 0; i < num_1; ++i) {
+
+      int num = i;
+      std::string name_1 = "A";
+      name_1 = name_1 + "_" + std::to_string(num);
+
+      std::string name_2 = "B";
+      name_2 = name_2 + "_" + std::to_string(num);
+
+      std::string degree = "PhD";
+      std::string major = "Computer Science";
+      std::string address = "CA, US";
+
+      EducationInfo* edu_1 = message_first.add_education();
+      edu_1->set_name(name_1);
+      edu_1->set_degree(degree);
+      edu_1->set_major(major);
+      edu_1->set_address(address);
+
+      EducationInfo* edu_2 = message_second.add_education();
+      edu_2->set_name(name_2);
+      edu_2->set_degree(degree);
+      edu_2->set_major(major);
+      edu_2->set_address(address);
+    }
+
+//    std::cout << message_first.education_size() << std::endl;
+//    std::cout << message_second.education_size() << std::endl;
+    // Generate the Differential Request
+    DiffRequest diff_request = ClientUtil::WriteMsgToDiffRequest(message_first, message_second);
+
+    // Call Default Differential Service that compare two messages by default.
+    DiffResponse diff_response_default =
+        service_client.DefaultDifferentialService(diff_request);
+//    std::cout << "Message differential result (Default): \n"
+//              << diff_response_default.result() << std::endl;
+
+    end = clock();
+
+    double time_taken = double(end - start) / double(CLOCKS_PER_SEC);
+    std::cout << "Time taken is : " << std::fixed << time_taken << std::setprecision(5);
+    std::cout << " sec " << std::endl;
+
+
+  }
+
+
+
+//  std::cout << message_first.DebugString() << std::endl;
+//  std::cout << message_second.DebugString() << std::endl;
+
+
+
+//  ExamScore* exam_score_1 = message_first.add_exam_score();
+//  exam_score_1->set_exam1("Mid");
+//  exam_score_1->set_score1(98);
+//  exam_score_1->set_exam2("Final");
+//  exam_score_1->set_score2(86);
 
   /*
   message_first.set_employ_id(01);
@@ -123,13 +193,13 @@ int main(int argc, char* argv[]) {
   message_first.set_floatpoint(100.0);
 */
 
-  TestEmployee message_second;
 
-  ExamScore* exam_score_2 = message_second.add_exam_score();
-  exam_score_2->set_exam1("Final");
-  exam_score_2->set_exam2("Mid");
-  exam_score_2->set_score1(86);
-  exam_score_2->set_score2(98);
+
+//  ExamScore* exam_score_2 = message_second.add_exam_score();
+//  exam_score_2->set_exam1("Final");
+//  exam_score_2->set_exam2("Mid");
+//  exam_score_2->set_score1(86);
+//  exam_score_2->set_score2(98);
 
   /*
   message_second.set_employ_id(02);
@@ -161,13 +231,16 @@ int main(int argc, char* argv[]) {
 
 
   // Generate the Differential Request
-  DiffRequest diff_request = ClientUtil::WriteMsgToDiffRequest(message_first, message_second);
+//  DiffRequest diff_request = ClientUtil::WriteMsgToDiffRequest(message_first, message_second);
+//
+//  // Call Default Differential Service that compare two messages by default.
+//  DiffResponse diff_response_default =
+//      service_client.DefaultDifferentialService(diff_request);
+//  std::cout << "Message differential result (Default): \n"
+//            << diff_response_default.result() << std::endl;
 
-  // Call Default Differential Service that compare two messages by default.
-  DiffResponse diff_response_default =
-      service_client.DefaultDifferentialService(diff_request);
-  std::cout << "Message differential result (Default): \n"
-            << diff_response_default.result() << std::endl;
+
+
 
 
   /*
@@ -211,20 +284,17 @@ int main(int argc, char* argv[]) {
   ClientUtil::SetFractionAndMargin(&diff_request, 0.01, 0.0);
 */
 
-  DifferentialService::MapCompareNotSameIndex* tmp = diff_request.mutable_map_compare_not_same_index();
-  tmp->set_repeated_field("exam_score");
-  tmp->set_first_key_field("exam_score.exam1");
-  tmp->set_second_key_field("exam_score.exam2");
+//  DifferentialService::MapCompareNotSameIndex* tmp = diff_request.mutable_map_compare_not_same_index();
+//  tmp->set_repeated_field("exam_score");
+//  tmp->set_first_key_field("exam_score.exam1");
+//  tmp->set_second_key_field("exam_score.exam2");
 
 
 
   // Call Differential Service that compare two messages.
-  DiffResponse diff_response = service_client.DifferentialService(diff_request);
-  std::cout << "Message differential result: \n"
-            << diff_response.result() << std::endl;
-
-
-
+//  DiffResponse diff_response = service_client.DifferentialService(diff_request);
+//  std::cout << "Message differential result: \n"
+//            << diff_response.result() << std::endl;
 
 
 

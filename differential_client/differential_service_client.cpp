@@ -3,16 +3,18 @@
 //
 #include "differential_service_client.h"
 
-DifferentialServiceClient::DifferentialServiceClient(const std::string& target_address) {
+DifferentialServiceClient::DifferentialServiceClient() {
+}
+
+bool DifferentialServiceClient::InitializeConnection() {
+  const std::string& target_address = "0.0.0.0:50053";
   // Create the channel by target address.
   const std::shared_ptr<Channel>& channel =
       grpc::CreateChannel(target_address, grpc::InsecureChannelCredentials());
 
   // Create a new Server stub by the channel.
   stub_ = ServerDifferential::NewStub(channel);
-}
 
-bool DifferentialServiceClient::InitializeConnection() {
   // Check the connection with Server.
   // 1) Create a request.
   MsgRequest request;

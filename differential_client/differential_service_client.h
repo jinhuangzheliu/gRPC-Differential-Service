@@ -33,7 +33,7 @@ using DifferentialService::DiffResponse;
 class DifferentialServiceClient {
  public:
   // Constructor for client derived from the stub of ServerDifferential
-  explicit DifferentialServiceClient(const std::string& target_address);
+  explicit DifferentialServiceClient();
 
   // Initial the connection to the server
   bool InitializeConnection();
@@ -57,6 +57,7 @@ class DifferentialServiceClient {
 
  private:
   std::unique_ptr<ServerDifferential::Stub> stub_;
+//  std::string target_address;
 };
 
 #endif  // DIFFERENTIAL_CLIENT_DIFFERENTIAL_SERVICE_CLIENT_H
