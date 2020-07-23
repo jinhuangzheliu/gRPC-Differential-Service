@@ -296,6 +296,9 @@ int main(int argc, char* argv[]) {
 //  std::cout << "Message differential result: \n"
 //            << diff_response.result() << std::endl;
 
+  
+  // Test the commit in new branch
+  std::cout << "Hi, I'm the new branch" << std::endl;
 
 
   google::protobuf::ShutdownProtobufLibrary();
