@@ -249,6 +249,7 @@ message DiffRequest {
   MapCompareNotSameIndex map_compare_not_same_index = 8;
 
   // Set the fraction and margin for float/double number comparison.
+  // Add an new commits for test github verson control
   FloatNumComparison float_num_comparison = 9;
 }
 
