@@ -299,6 +299,9 @@ int main(int argc, char* argv[]) {
   
   // Test the commit in new branch
   std::cout << "Hi, I'm the new branch" << std::endl;
+  
+  // Try to modify code from external branch
+  std::cout << "Hi, Jin Huang from window" << std::endl;
 
 
   google::protobuf::ShutdownProtobufLibrary();
