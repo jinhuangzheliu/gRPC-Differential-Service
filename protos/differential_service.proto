@@ -249,7 +249,7 @@ message DiffRequest {
   MapCompareNotSameIndex map_compare_not_same_index = 8;
 
   // Set the fraction and margin for float/double number comparison.
-  FloatNumComparison fraction_margin = 9;
+  FloatNumComparison float_num_comparison = 9;
 }
 
 message DiffResponse {
