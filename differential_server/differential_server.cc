@@ -414,7 +414,7 @@ class MessageServiceImpl final : public ServerDifferential::Service
     return Status::OK;
   }
 
-  Status DifferentialService(ServerContext* context, const DiffRequest* diff_request, DiffResponse* diff_response) override {
+  Status CompareInputMessages(ServerContext* context, const DiffRequest* diff_request, DiffResponse* diff_response) override {
     /****************************************************************************
      *
      * 1) Dynamically re-generate the compared two messages.
@@ -537,9 +537,9 @@ class MessageServiceImpl final : public ServerDifferential::Service
       for (int i = 0; i < num; ++i) {
 
         // Get the repeated field Tuple <flag, field_name> flag is binary option ...FLAG_LIST or ...FLAG_SET
-        const DifferentialService::RepeatedFieldTuple& repeated_field_tuple = diff_request->repeated_field(i);
+        const DifferentialService::RepeatedField& repeated_field_tuple = diff_request->repeated_field(i);
 
-        if (repeated_field_tuple.flag() == DifferentialService::RepeatedFieldTuple_TreatAsFlag_FLAG_LIST)
+        if (repeated_field_tuple.flag() == DifferentialService::RepeatedField_TreatAsFlag_FLAG_LIST)
         {
           // Get the field name
           const std::string& field_name = repeated_field_tuple.field_name();
@@ -574,7 +574,7 @@ class MessageServiceImpl final : public ServerDifferential::Service
       int num = diff_request->map_compare_size();
       for (int i = 0; i < num; ++i) {
         // Get the MapCompareTuple <name of repeated field, one/more sub field as map>
-        const DifferentialService::MapCompareTuple& tuple = diff_request->map_compare(i);
+        const DifferentialService::MapCompare& tuple = diff_request->map_compare(i);
 
         // Get the repeated filed name
         const std::string& field_name = tuple.repeated_field();
@@ -670,9 +670,9 @@ class MessageServiceImpl final : public ServerDifferential::Service
      *
      *******************************************************/
     // if float_comparison is set
-    if (diff_request->has_fraction_margin()) {
+    if (diff_request->has_float_num_comparison()) {
       const DifferentialService::FloatNumComparison& fraction_Margin =
-          diff_request->fraction_margin();
+          diff_request->float_num_comparison();
 
       double fraction = fraction_Margin.fraction();
       double margin = fraction_Margin.margin();

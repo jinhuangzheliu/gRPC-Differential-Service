@@ -57,7 +57,7 @@ DiffResponse DifferentialServiceClient::DefaultDifferentialService(const DiffReq
   }
 }
 
-DiffResponse DifferentialServiceClient::DifferentialService(const DiffRequest& diff_request) {
+DiffResponse DifferentialServiceClient::CompareInputMessages(const DiffRequest& diff_request) {
   // Initial the differential result.
   DifferentialService::DiffResponse differ_response;
 
@@ -65,7 +65,7 @@ DiffResponse DifferentialServiceClient::DifferentialService(const DiffRequest& d
   ClientContext context;
 
   // implement the DifferentialService in differential service.
-  Status status = stub_->DifferentialService(&context, diff_request, &differ_response);
+  Status status = stub_->CompareInputMessages(&context, diff_request, &differ_response);
 
   // If the status is ok, return the message DiffMsgReply.
   // If not, set the error field by error message and clear the result field

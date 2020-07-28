@@ -53,7 +53,7 @@ class DifferentialServiceClient {
    * [Input Args]: the object of differential request message.
    * [Return]: the object of differential reply message.
    */
-  DiffResponse DifferentialService(const DiffRequest& diff_request);
+  DiffResponse CompareInputMessages(const DiffRequest& diff_request);
 
  private:
   std::unique_ptr<ServerDifferential::Stub> stub_;

@@ -50,16 +50,19 @@ using DifferentialTest::TestEmployee;
 
 namespace {
 // Initial the test stub for testing the differential service
-DifferentialServiceClient* TestStub_;
+DifferentialServiceClient TestStub_;
 }
 
 // Create the test environment of the differential service.
 class DifferentialTestEnvironment :public testing::Environment {
  public:
   explicit DifferentialTestEnvironment(){
-    std::string target_address = "0.0.0.0:50053";
+//    std::string target_address = "0.0.0.0:50053";
     // Create the test stub by the target address
-    TestStub_ = new DifferentialServiceClient(target_address);
+//    DifferentialServiceClient TestStub_;
+    TestStub_.InitializeConnection();
+//    TestStub_ = service_client;
+//    TestStub_ = new DifferentialServiceClient();
   }
 };
 
@@ -88,7 +91,7 @@ TEST(DifferentialUnitTest, test_the_basic_diff_service) {
   DiffRequest diff_request = ClientUtil::WriteMsgToDiffRequest(message_first, message_second);
 
   // Receive the differential response.
-  DiffResponse diff_response = TestStub_->DefaultDifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.DefaultDifferentialService(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -125,7 +128,7 @@ TEST(DifferentialUnitTest, test_the_basic_diff_service_by_nested_field) {
   DiffRequest diff_request = ClientUtil::WriteMsgToDiffRequest(message_first, message_second);
   
   // Receive the differential service reponse.
-  DiffResponse diff_response = TestStub_->DefaultDifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.DefaultDifferentialService(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -166,7 +169,7 @@ TEST(DifferentialUnitTest, test_ignore_one_field) {
   ClientUtil::IgnoreFields(&diff_request, fields);
 
   // Receive the differential service reponse.
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -213,7 +216,7 @@ TEST(DifferentialUnitTest, test_ignore_two_fields) {
 
 
   // Receive the differential service reponse.
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -287,7 +290,7 @@ TEST(DifferentialUnitTest, test_ignore_nested_fields) {
 
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -350,7 +353,7 @@ TEST(DifferentialUnitTest, test_ignore_nothing) {
 
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -431,7 +434,7 @@ TEST(DifferentialUnitTest, test_ignore_all_fields) {
 
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -493,7 +496,7 @@ TEST(DifferentialUnitTest, test_compare_one_field){
 
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -554,7 +557,7 @@ TEST(DifferentialUnitTest, test_compare_more_fields){
 
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -619,7 +622,7 @@ TEST(DifferentialUnitTest, test_compare_one_nested_field){
 
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -686,7 +689,7 @@ TEST(DifferentialUnitTest, test_compare_more_nested_fields){
 
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -744,7 +747,7 @@ TEST(DifferentialUnitTest, compare_5){
 
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -788,7 +791,7 @@ TEST(DifferentialUnitTest, test_ignore_field_with_the_suffix_ame){
   ClientUtil::RegexCriteria(&diff_request, regex);
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -844,7 +847,7 @@ TEST(DifferentialUnitTest, test_ignore_field_with_the_suffix_ame_in_nested_field
   ClientUtil::RegexCriteria(&diff_request, regex);
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -900,7 +903,7 @@ TEST(DifferentialUnitTest, test_ignore_field_with_the_suffix_ress_in_nested_fiel
   ClientUtil::RegexCriteria(&diff_request, regex);
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -947,7 +950,7 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_list_same){
 
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -994,7 +997,7 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_list_diff){
 
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -1061,7 +1064,7 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_list_same){
 
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -1126,7 +1129,7 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_list_diff){
 
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -1207,7 +1210,7 @@ TEST(DifferentialUnitTest, test_multiple_repeated_fields_treat_as_list_same){
 
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -1286,7 +1289,7 @@ TEST(DifferentialUnitTest, test_multiple_repeated_fields_treat_as_list_diff){
 
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -1336,7 +1339,7 @@ TEST(DifferentialUnitTest, test_repleated_field_treat_as_list_delete_item){
 
 
   // ********************** Differential Service **********************
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -1380,7 +1383,7 @@ TEST(DifferentialUnitTest, test_repleated_field_treat_as_list_add_item){
   ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field_1);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -1423,7 +1426,7 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_set_same){
   ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_1);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -1468,7 +1471,7 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_set_diff){
   ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_1);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -1512,7 +1515,7 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_set_delete){
   ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_1);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -1555,7 +1558,7 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_set_add){
   ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_1);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -1596,7 +1599,7 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_set_add_more_fields){
   ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_1);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -1674,7 +1677,7 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_set_same){
   ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_3);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -1748,7 +1751,7 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_set_add){
   ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_3);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -1824,7 +1827,7 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_set_delete){
   ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_3);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -1901,7 +1904,7 @@ TEST(DifferentialUnitTest, repeated_set_9){
   ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_3);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -1978,7 +1981,7 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_set_delete_and_ad
   ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_3);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2060,7 +2063,7 @@ TEST(DifferentialUnitTest, test_repeated_fields_treat_as_list_and_set){
   ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field_3);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2105,7 +2108,7 @@ TEST(DifferentialUnitTest, test_map_compare_same){
   ClientUtil::TreatRepeatedFieldAsMap(&diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2152,7 +2155,7 @@ TEST(DifferentialUnitTest, test_map_compare_key_diff){
   ClientUtil::TreatRepeatedFieldAsMap(&diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2197,7 +2200,7 @@ TEST(DifferentialUnitTest, test_map_compare_value_diff){
   ClientUtil::TreatRepeatedFieldAsMap(&diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2242,7 +2245,7 @@ TEST(DifferentialUnitTest, test_map_compare_key_and_value_diff){
   ClientUtil::TreatRepeatedFieldAsMap(&diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2288,7 +2291,7 @@ TEST(DifferentialUnitTest, test_map_compare_multi_fields_as_key_same){
   ClientUtil::TreatRepeatedFieldAsMap(&diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2333,7 +2336,7 @@ TEST(DifferentialUnitTest, test_map_compare_multi_fields_as_key_diff){
   ClientUtil::TreatRepeatedFieldAsMap(&diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2379,7 +2382,7 @@ TEST(DifferentialUnitTest, test_map_compare_multi_fields_as_key_value_diff){
   ClientUtil::TreatRepeatedFieldAsMap(&diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2425,7 +2428,7 @@ TEST(DifferentialUnitTest, test_map_compare_multi_fields_as_key_all_diff){
   ClientUtil::TreatRepeatedFieldAsMap(&diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2468,7 +2471,7 @@ TEST(DifferentialUnitTest, test_map_compare_first_message_empty){
   ClientUtil::TreatRepeatedFieldAsMap(&diff_request, map_field_name, sub_field_list);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2513,7 +2516,7 @@ TEST(DifferentialUnitTest, test_map_compare_second_message_empty){
 
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2547,7 +2550,7 @@ TEST(DifferentialUnitTest, test_fraction_margin_for_float_number){
   ClientUtil::SetFractionAndMargin(&diff_request, 0.01, 0.0);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2565,7 +2568,7 @@ TEST(DifferentialUnitTest, test_fraction_margin_for_float_number){
   ClientUtil::SetFractionAndMargin(&diff_request, 0.2, 0.0);
 
   // Implements the differential service.
-  DiffResponse diff_response_1 = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response_1 = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res_1 = diff_response_1.result();
@@ -2582,7 +2585,7 @@ TEST(DifferentialUnitTest, test_fraction_margin_for_float_number){
   ClientUtil::SetFractionAndMargin(&diff_request, 0.01, 10.0);
 
   // Implements the differential service.
-  DiffResponse diff_response_2 = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response_2 = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res_2 = diff_response_2.result();
@@ -2614,7 +2617,7 @@ TEST(DifferentialUnitTest, test_fraction_margin_for_double_number){
   ClientUtil::SetFractionAndMargin(&diff_request, 0.01, 0.0);
 
   // Implements the differential service.
-  DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2632,7 +2635,7 @@ TEST(DifferentialUnitTest, test_fraction_margin_for_double_number){
   ClientUtil::SetFractionAndMargin(&diff_request, 0.2, 0.0);
 
   // Implements the differential service.
-  DiffResponse diff_response_1 = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response_1 = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res_1 = diff_response_1.result();
@@ -2649,7 +2652,7 @@ TEST(DifferentialUnitTest, test_fraction_margin_for_double_number){
   ClientUtil::SetFractionAndMargin(&diff_request, 0.01, 10.0);
 
   // Implements the differential service.
-  DiffResponse diff_response_2 = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response_2 = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res_2 = diff_response_2.result();
@@ -2697,7 +2700,7 @@ TEST(DifferentialUnitTest, test_ignore_and_treatASList){
   ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, repeated_field);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2767,7 +2770,7 @@ TEST(DifferentialUnitTest, test_ignore_and_treatASList_treatASMap){
 
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+   DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2867,7 +2870,7 @@ TEST(DifferentialUnitTest, test_ignore_and_treatASList_treatASMap_fractionAndMar
   message_second.set_floatpoint(num2);
 
   // Write the message to log message.
-    DiffRequest diff_request = ClientUtil::WriteMsgToDiffRequest(message_first,
+  DiffRequest diff_request = ClientUtil::WriteMsgToDiffRequest(message_first,
                                                                    message_second);
 
   // add ignore fields
@@ -2904,7 +2907,7 @@ TEST(DifferentialUnitTest, test_ignore_and_treatASList_treatASMap_fractionAndMar
   ClientUtil::SetFractionAndMargin(&diff_request, 0.01, 0.0);
 
   // Implements the differential service.
-   DiffResponse diff_response = TestStub_->DifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -2918,6 +2921,112 @@ TEST(DifferentialUnitTest, test_ignore_and_treatASList_treatASMap_fractionAndMar
 
   EXPECT_STREQ(c_test_res, except_res);
 }
+
+// Test 48: Test the maximum size of input message.
+TEST(DifferentialUnitTest, test_maximum_size_of_input_message_with_50000_repeated_field){
+  /*
+   *  In this testing case, we will try to input two same messages with 50000
+   *  repeated "education" fields.
+   */
+  TestEmployee message_first;
+  TestEmployee message_second;
+
+  for (int i = 0; i < 50000; ++i) {
+    int num = i;
+    std::string name_1 = "A";
+    name_1 = name_1 + "_" + std::to_string(num);
+
+    std::string name_2 = "A";
+    name_2 = name_2 + "_" + std::to_string(num);
+
+    std::string degree = "PhD";
+    std::string major = "Computer Science";
+    std::string address = "CA, US";
+
+    EducationInfo* edu_1 = message_first.add_education();
+    edu_1->set_name(name_1);
+    edu_1->set_degree(degree);
+    edu_1->set_major(major);
+    edu_1->set_address(address);
+
+    EducationInfo* edu_2 = message_second.add_education();
+    edu_2->set_name(name_2);
+    edu_2->set_degree(degree);
+    edu_2->set_major(major);
+    edu_2->set_address(address);
+  }
+
+  // Write the message to log message.
+  DiffRequest diff_request = ClientUtil::WriteMsgToDiffRequest(message_first,
+                                                               message_second);
+
+  // Implements the differential service.
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
+
+  // Get the test result.
+  const std::string& test_res = diff_response.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  const char* except_res = "SAME";
+
+  EXPECT_STREQ(c_test_res, except_res);
+}
+
+// Test 48: Test the maximum size of input message.
+//TEST(DifferentialUnitTest, test_maximum_size_of_input_message_with_100000_repeated_field){
+//  /*
+//   *  In this testing case, we will try to input two same messages with 50000
+//   *  repeated "education" fields.
+//   */
+//  TestEmployee message_first;
+//  TestEmployee message_second;
+//
+//  for (int i = 0; i < 100000; ++i) {
+//    int num = i;
+//    std::string name_1 = "A";
+//    name_1 = name_1 + "_" + std::to_string(num);
+//
+//    std::string name_2 = "A";
+//    name_2 = name_2 + "_" + std::to_string(num);
+//
+//    std::string degree = "PhD";
+//    std::string major = "Computer Science";
+//    std::string address = "CA, US";
+//
+//    EducationInfo* edu_1 = message_first.add_education();
+//    edu_1->set_name(name_1);
+//    edu_1->set_degree(degree);
+//    edu_1->set_major(major);
+//    edu_1->set_address(address);
+//
+//    EducationInfo* edu_2 = message_second.add_education();
+//    edu_2->set_name(name_2);
+//    edu_2->set_degree(degree);
+//    edu_2->set_major(major);
+//    edu_2->set_address(address);
+//  }
+//
+//  // Write the message to log message.
+//  DiffRequest diff_request = ClientUtil::WriteMsgToDiffRequest(message_first,
+//                                                               message_second);
+//
+//  // Implements the differential service.
+//  DiffResponse diff_response = TestStub_.DifferentialService(diff_request);
+//
+//  // Get the test result.
+//  const std::string& test_res = diff_response.result();
+//
+//  // Casting to char* for unit test.
+//  const char* c_test_res = test_res.c_str();
+//
+//  const char* except_res = "SAME";
+//
+//  EXPECT_STREQ(c_test_res, except_res);
+//}
+
+
 
 
 

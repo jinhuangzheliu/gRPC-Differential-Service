@@ -101,16 +101,16 @@ void ClientUtil::TreatRepeatedFieldAsListOrSet(DiffRequest* diff_request,
                                                const std::string& field_name) {
   // Get the pointer of the Repeated Field Tuple, which defined in
   // differential_service.proto
-  DifferentialService::RepeatedFieldTuple* tuple_ptr =
+  DifferentialService::RepeatedField* tuple_ptr =
       diff_request->add_repeated_field();
 
   // Set the treat as flag.
   if (flag == 0) {
     tuple_ptr->set_flag(
-        DifferentialService::RepeatedFieldTuple_TreatAsFlag_FLAG_LIST);
+        DifferentialService::RepeatedField_TreatAsFlag_FLAG_LIST);
   } else if (flag == 1) {
     tuple_ptr->set_flag(
-        DifferentialService::RepeatedFieldTuple_TreatAsFlag_FLAG_SET);
+        DifferentialService::RepeatedField_TreatAsFlag_FLAG_SET);
   }
   // Set the field name.
   tuple_ptr->set_field_name(field_name);
@@ -121,7 +121,7 @@ void ClientUtil::TreatRepeatedFieldAsMap(DiffRequest* diff_request,
                                          const std::vector<std::string>& sub_field_name) {
   // Get the pointer of the MapCompareTuple, which defined in
   // differntial_service.proto.
-  DifferentialService::MapCompareTuple* map_compare_ptr =
+  DifferentialService::MapCompare* map_compare_ptr =
       diff_request->add_map_compare();
 
   // Set the repeated field name
@@ -138,7 +138,7 @@ void ClientUtil::SetFractionAndMargin(DiffRequest* diff_request,
                                       const double margin) {
   // get the pointer of Float Number Comparison
   DifferentialService::FloatNumComparison* fracAndMar_ptr =
-      diff_request->mutable_fraction_margin();
+      diff_request->mutable_float_num_comparison();
   fracAndMar_ptr->set_fraction(fraction);
   fracAndMar_ptr->set_margin(margin);
 }

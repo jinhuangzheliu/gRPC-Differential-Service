@@ -71,7 +71,7 @@ message IgnoreCriteria{
   string regex = 3;
 }
 
-message RepeatedFieldTuple{
+message RepeatedField{
   // Defines how to treat the repeated field as List or Set.
   // Used by message log { repeated repeatedFieldTuple repeated_field = 6; }
   // When the repeated_fields is set, repeatedFieldTuple will work in two ways:
@@ -106,7 +106,7 @@ message RepeatedFieldTuple{
   string field_name = 2;
 }
 
-message MapCompareTuple{
+message MapCompare{
   // Defines how to compare the repeated field as Map-value pair.
   // user can select one/more specific field/fields as the Map
   // and remaining fields as the Value to compare two messages.
@@ -240,16 +240,15 @@ message DiffRequest {
   IgnoreCriteria user_ignore = 5;
 
   // Defines how to compare the repeated field
-  repeated RepeatedFieldTuple repeated_field = 6;
+  repeated RepeatedField repeated_field = 6;
 
   // Map-based compare the repeated_field with one/more field.
-  repeated MapCompareTuple map_compare = 7;
+  repeated MapCompare map_compare = 7;
 
   // Map-based compare the given repeated field if the [key] field don't appear at the same index.
   MapCompareNotSameIndex map_compare_not_same_index = 8;
 
   // Set the fraction and margin for float/double number comparison.
-  // Add an new commits for test github verson control
   FloatNumComparison float_num_comparison = 9;
 }
 
@@ -361,7 +360,7 @@ service ServerDifferential {
   // 4. Set the fraction and margin to float/double comparison.
   //    By setting "float_comparison fraction_margin = 8;"
   //    User could approximate the comparison of float/double number.
-  rpc DifferentialService (DiffRequest) returns (DiffResponse) {}
+  rpc CompareInputMessages (DiffRequest) returns (DiffResponse) {}
 }
 
 
