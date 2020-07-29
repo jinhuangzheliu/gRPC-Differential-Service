@@ -58,7 +58,9 @@ DiffResponse DifferentialServiceClient::CompareInputMessages(const DiffRequest& 
   if (status.ok()) {
     return diff_response;
   } else {
-    diff_response.set_error(status.error_message());
+    if (diff_response.error() == ""){
+      diff_response.set_error(status.error_message());
+    }
     diff_response.clear_result();
     std::cout << status.error_code() << ": " << status.error_message()
               << std::endl;

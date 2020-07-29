@@ -349,6 +349,18 @@ class MessageServiceImpl final : public ServerDifferential::Service
   }
 
   Status CompareInputMessages(ServerContext* context, const DiffRequest* diff_request, DiffResponse* diff_response) override {
+    /*
+     * 0) Check the size of the input proto message.
+     */
+    size_t proto_max_size = 4194304;
+    size_t size_of_request_msg = diff_request->ByteSizeLong();
+
+    if (size_of_request_msg > proto_max_size){
+      diff_response->set_error("The size of request message larger than max(4194304).");
+      return Status::CANCELLED;
+    }
+
+
     /****************************************************************************
      *
      * 1) Dynamically re-generate the compared two messages.
