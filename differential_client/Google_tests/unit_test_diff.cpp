@@ -57,12 +57,8 @@ DifferentialServiceClient TestStub_;
 class DifferentialTestEnvironment :public testing::Environment {
  public:
   explicit DifferentialTestEnvironment(){
-//    std::string target_address = "0.0.0.0:50053";
-    // Create the test stub by the target address
-//    DifferentialServiceClient TestStub_;
+    // Initialize the connection.
     TestStub_.InitializeConnection();
-//    TestStub_ = service_client;
-//    TestStub_ = new DifferentialServiceClient();
   }
 };
 
@@ -91,7 +87,7 @@ TEST(DifferentialUnitTest, test_the_basic_diff_service) {
   DiffRequest diff_request = ClientUtil::WriteMsgToDiffRequest(message_first, message_second);
 
   // Receive the differential response.
-  DiffResponse diff_response = TestStub_.DefaultDifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -101,8 +97,14 @@ TEST(DifferentialUnitTest, test_the_basic_diff_service) {
 
   // Only fullname is different
   const char* except_res = "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n";
-
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -128,7 +130,7 @@ TEST(DifferentialUnitTest, test_the_basic_diff_service_by_nested_field) {
   DiffRequest diff_request = ClientUtil::WriteMsgToDiffRequest(message_first, message_second);
   
   // Receive the differential service reponse.
-  DiffResponse diff_response = TestStub_.DefaultDifferentialService(diff_request);
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
 
   // Get the test result.
   const std::string& test_res = diff_response.result();
@@ -141,6 +143,13 @@ TEST(DifferentialUnitTest, test_the_basic_diff_service_by_nested_field) {
       "modified: employer.occupation: \"Intern\" -> \"Software Engineer\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -181,6 +190,13 @@ TEST(DifferentialUnitTest, test_ignore_one_field) {
   const char* except_res = "SAME";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -228,6 +244,13 @@ TEST(DifferentialUnitTest, test_ignore_two_fields) {
   const char* except_res = "modified: age: 39 -> 32\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -304,6 +327,13 @@ TEST(DifferentialUnitTest, test_ignore_nested_fields) {
   const char* except_res = "modified: age: 39 -> 32\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -371,6 +401,14 @@ TEST(DifferentialUnitTest, test_ignore_nothing) {
                            "modified: employer.occupation: \"Software Engineer\" -> \"Research Scientist\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -445,8 +483,14 @@ TEST(DifferentialUnitTest, test_ignore_all_fields) {
   // ******************** Prospective result **********************
   // Test all fields are ignored so result should be same.
   const char* except_res = "SAME";
-
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -509,6 +553,13 @@ TEST(DifferentialUnitTest, test_compare_one_field){
   const char* except_res = "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -572,6 +623,14 @@ TEST(DifferentialUnitTest, test_compare_more_fields){
                            "modified: age: 39 -> 32\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -635,6 +694,13 @@ TEST(DifferentialUnitTest, test_compare_one_nested_field){
   const char* except_res = "modified: employer.name: \"Google Inc.\" -> \"Alphabet Inc.\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -703,6 +769,14 @@ TEST(DifferentialUnitTest, test_compare_more_nested_fields){
                            "modified: employer.occupation: \"Software Engineer\" -> \"Research Scientist\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -764,6 +838,14 @@ TEST(DifferentialUnitTest, compare_5){
                            "modified: employer.occupation: \"Software Engineer\" -> \"Research Scientist\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -805,6 +887,14 @@ TEST(DifferentialUnitTest, test_ignore_field_with_the_suffix_ame){
   const char* except_res = "modified: age: 32 -> 29\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -861,6 +951,14 @@ TEST(DifferentialUnitTest, test_ignore_field_with_the_suffix_ame_in_nested_field
                            "modified: education[0].address: \"FL, US\" -> \"OH, US\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -916,6 +1014,14 @@ TEST(DifferentialUnitTest, test_ignore_field_with_the_suffix_ress_in_nested_fiel
   const char* except_res = "modified: education[0].name: \"University of Florida\" -> \"Wright State University\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -963,6 +1069,14 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_list_same){
   const char* except_res = "SAME";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1011,6 +1125,14 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_list_diff){
       "modified: areas[3]: \"Click Ads.\" -> \"Search Ads.\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1077,6 +1199,14 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_list_same){
   const char* except_res = "SAME";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1145,6 +1275,14 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_list_diff){
                            "modified: dependents.name[3]: \"June\" -> \"Jin\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1222,6 +1360,14 @@ TEST(DifferentialUnitTest, test_multiple_repeated_fields_treat_as_list_same){
   const char* except_res = "SAME";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1306,6 +1452,14 @@ TEST(DifferentialUnitTest, test_multiple_repeated_fields_treat_as_list_diff){
       "modified: dependents.age[3]: 32 -> 26\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1352,6 +1506,14 @@ TEST(DifferentialUnitTest, test_repleated_field_treat_as_list_delete_item){
   const char* except_res = "deleted: areas[3]: \"Click Ads.\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1396,6 +1558,13 @@ TEST(DifferentialUnitTest, test_repleated_field_treat_as_list_add_item){
   const char* except_res = "added: areas[3]: \"Click Ads.\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1438,6 +1607,14 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_set_same){
   const char* except_res = "SAME";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1483,6 +1660,13 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_set_diff){
   const char* except_res = "added: areas[3]: \"Pop_up Ads.\"\ndeleted: areas[1]: \"YouTube Ads.\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1527,6 +1711,13 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_set_delete){
   const char* except_res = "deleted: areas[1]: \"YouTube Ads.\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1570,6 +1761,14 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_set_add){
   const char* except_res = "added: areas[3]: \"Pop_up Ads.\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1613,6 +1812,14 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_set_add_more_fields){
       "added: areas[3]: \"Pop_up Ads.\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1689,6 +1896,14 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_set_same){
   const char* except_res = "SAME";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1765,6 +1980,14 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_set_add){
       "added: dependents.age[3]: 26\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1840,6 +2063,14 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_set_delete){
       "deleted: dependents.age[2]: 32\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1917,6 +2148,14 @@ TEST(DifferentialUnitTest, repeated_set_9){
                          "deleted: dependents.age[2]: 32\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -1998,6 +2237,13 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_set_delete_and_ad
       "deleted: dependents.age[2]: 31\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -2075,6 +2321,14 @@ TEST(DifferentialUnitTest, test_repeated_fields_treat_as_list_and_set){
   const char* except_res = "SAME";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -2120,6 +2374,14 @@ TEST(DifferentialUnitTest, test_map_compare_same){
   const char* except_res = "SAME";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 
@@ -2168,6 +2430,14 @@ TEST(DifferentialUnitTest, test_map_compare_key_diff){
       "deleted: education[0]: { name: \"University of Dayton\" degree: \"PhD\" major: \"Computer Science\" address: \"OH, US\" }\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 // Test 35: Test a sub filed treat as Map. [value] is different
@@ -2213,6 +2483,14 @@ TEST(DifferentialUnitTest, test_map_compare_value_diff){
       "modified: education[0].major: \"Computer Science\" -> \"Computer Science and Engineering\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 // Test 36: Test a sub filed treat as Map. Map and Value are different at same time.
@@ -2258,6 +2536,14 @@ TEST(DifferentialUnitTest, test_map_compare_key_and_value_diff){
       "deleted: education[0]: { name: \"Wright State University\" degree: \"PhD\" major: \"Computer Science\" address: \"OH, US\" }\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 // Test 37: Test multiple sub fields as Map. Map is different.
@@ -2303,6 +2589,14 @@ TEST(DifferentialUnitTest, test_map_compare_multi_fields_as_key_same){
   const char* except_res = "SAME";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 // Test 38: Test multiple sub fields as Map. Map is different.
@@ -2349,6 +2643,13 @@ TEST(DifferentialUnitTest, test_map_compare_multi_fields_as_key_diff){
       "deleted: education[0]: { name: \"Wright State University\" degree: \"PhD\" major: \"Computer Science\" address: \"OH, US\" }\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 // Test 35: Test multiple sub fields as Map. Value is different.
@@ -2394,6 +2695,13 @@ TEST(DifferentialUnitTest, test_map_compare_multi_fields_as_key_value_diff){
   const char* except_res = "modified: education[0].major: \"Computer Science\" -> \"Computer Science and Engineering\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 // Test 36: Test multiple sub fields as Map. Map and Value are different.
@@ -2441,6 +2749,14 @@ TEST(DifferentialUnitTest, test_map_compare_multi_fields_as_key_all_diff){
       "deleted: education[0]: { name: \"Wright State University\" degree: \"PhD\" major: \"Computer Science\" address: \"OH, US\" }\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 // Test 37: Test multiple sub fields as Map. message 1 is empty
@@ -2486,6 +2802,14 @@ TEST(DifferentialUnitTest, test_map_compare_first_message_empty){
       "address: \"OH, US\" }\ndeleted: education[0]: { }\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
+
 }
 
 // Test 38: Test multiple sub fields as Map. message 2 is empty
@@ -2529,6 +2853,14 @@ TEST(DifferentialUnitTest, test_map_compare_second_message_empty){
       "deleted: education[0]: { name: \"Wright State University\" degree: \"PhD\" major: \"Computer Science\" address: \"OH, US\" }\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 // Test 39 - 41: Test the fraction and margin for float number comparison
@@ -2563,6 +2895,13 @@ TEST(DifferentialUnitTest, test_fraction_margin_for_float_number){
 
   EXPECT_STREQ(c_test_res, except_res);
 
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
+
   // 2)
   // Test out float comparison with fraction.
   ClientUtil::SetFractionAndMargin(&diff_request, 0.2, 0.0);
@@ -2580,6 +2919,13 @@ TEST(DifferentialUnitTest, test_fraction_margin_for_float_number){
 
   EXPECT_STREQ(c_test_res_1, except_res_1);
 
+  // Check the result error
+  const std::string& test_error_1 = diff_response.error();
+  const char* c_test_error_1 = test_error.c_str();
+  const char* except_error_1 = "";
+
+  EXPECT_STREQ(c_test_error_1, except_error_1);
+
   // 3)
   // Test out float comparison with fraction.
   ClientUtil::SetFractionAndMargin(&diff_request, 0.01, 10.0);
@@ -2596,6 +2942,13 @@ TEST(DifferentialUnitTest, test_fraction_margin_for_float_number){
   // should same.
   const char* except_res_2 = "SAME";
   EXPECT_STREQ(c_test_res_2, except_res_2);
+
+  // Check the result error
+  const std::string& test_error_2 = diff_response.error();
+  const char* c_test_error_2 = test_error.c_str();
+  const char* except_error_2 = "";
+
+  EXPECT_STREQ(c_test_error_2, except_error_2);
 }
 
 // Test 42 - 44: Test the fraction and margin for double number comparison
@@ -2712,6 +3065,13 @@ TEST(DifferentialUnitTest, test_ignore_and_treatASList){
   const char* except_res = "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 // Test 46: Test the ignore field isolated from repeated field set.
@@ -2782,6 +3142,13 @@ TEST(DifferentialUnitTest, test_ignore_and_treatASList_treatASMap){
   const char* except_res = "modified: fullname: \"Jin Huang\" -> \"Zhe Liu\"\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 // Test 47: Test the differential service comprehensively
@@ -2920,7 +3287,134 @@ TEST(DifferentialUnitTest, test_ignore_and_treatASList_treatASMap_fractionAndMar
       "modified: floatpoint: 100 -> 109.9\n";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
+
+// Test 48: Test the maximum size of input message.
+TEST(DifferentialUnitTest, test_maximum_size_of_input_message_with_1000_repeated_field){
+  /*
+   *  In this testing case, we will try to input two same messages with 50000
+   *  repeated "education" fields.
+   */
+  TestEmployee message_first;
+  TestEmployee message_second;
+
+  for (int i = 0; i < 1000; ++i) {
+    int num = i;
+    std::string name_1 = "A";
+    name_1 = name_1 + "_" + std::to_string(num);
+
+    std::string name_2 = "A";
+    name_2 = name_2 + "_" + std::to_string(num);
+
+    std::string degree = "PhD";
+    std::string major = "Computer Science";
+    std::string address = "CA, US";
+
+    EducationInfo* edu_1 = message_first.add_education();
+    edu_1->set_name(name_1);
+    edu_1->set_degree(degree);
+    edu_1->set_major(major);
+    edu_1->set_address(address);
+
+    EducationInfo* edu_2 = message_second.add_education();
+    edu_2->set_name(name_2);
+    edu_2->set_degree(degree);
+    edu_2->set_major(major);
+    edu_2->set_address(address);
+  }
+
+  // Write the message to log message.
+  DiffRequest diff_request = ClientUtil::WriteMsgToDiffRequest(message_first,
+                                                               message_second);
+
+  // Implements the differential service.
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
+
+  // Get the test result.
+  const std::string& test_res = diff_response.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  const char* except_res = "SAME";
+
+  EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
+}
+
+
+// Test 48: Test the maximum size of input message.
+TEST(DifferentialUnitTest, test_maximum_size_of_input_message_with_10000_repeated_field){
+  /*
+   *  In this testing case, we will try to input two same messages with 50000
+   *  repeated "education" fields.
+   */
+  TestEmployee message_first;
+  TestEmployee message_second;
+
+  for (int i = 0; i < 10000; ++i) {
+    int num = i;
+    std::string name_1 = "A";
+    name_1 = name_1 + "_" + std::to_string(num);
+
+    std::string name_2 = "A";
+    name_2 = name_2 + "_" + std::to_string(num);
+
+    std::string degree = "PhD";
+    std::string major = "Computer Science";
+    std::string address = "CA, US";
+
+    EducationInfo* edu_1 = message_first.add_education();
+    edu_1->set_name(name_1);
+    edu_1->set_degree(degree);
+    edu_1->set_major(major);
+    edu_1->set_address(address);
+
+    EducationInfo* edu_2 = message_second.add_education();
+    edu_2->set_name(name_2);
+    edu_2->set_degree(degree);
+    edu_2->set_major(major);
+    edu_2->set_address(address);
+  }
+
+  // Write the message to log message.
+  DiffRequest diff_request = ClientUtil::WriteMsgToDiffRequest(message_first,
+                                                               message_second);
+
+  // Implements the differential service.
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
+
+  // Get the test result.
+  const std::string& test_res = diff_response.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  const char* except_res = "SAME";
+
+  EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
+}
+
 
 // Test 48: Test the maximum size of input message.
 TEST(DifferentialUnitTest, test_maximum_size_of_input_message_with_50000_repeated_field){
@@ -2972,63 +3466,73 @@ TEST(DifferentialUnitTest, test_maximum_size_of_input_message_with_50000_repeate
   const char* except_res = "SAME";
 
   EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "";
+
+  EXPECT_STREQ(c_test_error, except_error);
 }
 
 // Test 48: Test the maximum size of input message.
-//TEST(DifferentialUnitTest, test_maximum_size_of_input_message_with_100000_repeated_field){
-//  /*
-//   *  In this testing case, we will try to input two same messages with 50000
-//   *  repeated "education" fields.
-//   */
-//  TestEmployee message_first;
-//  TestEmployee message_second;
-//
-//  for (int i = 0; i < 100000; ++i) {
-//    int num = i;
-//    std::string name_1 = "A";
-//    name_1 = name_1 + "_" + std::to_string(num);
-//
-//    std::string name_2 = "A";
-//    name_2 = name_2 + "_" + std::to_string(num);
-//
-//    std::string degree = "PhD";
-//    std::string major = "Computer Science";
-//    std::string address = "CA, US";
-//
-//    EducationInfo* edu_1 = message_first.add_education();
-//    edu_1->set_name(name_1);
-//    edu_1->set_degree(degree);
-//    edu_1->set_major(major);
-//    edu_1->set_address(address);
-//
-//    EducationInfo* edu_2 = message_second.add_education();
-//    edu_2->set_name(name_2);
-//    edu_2->set_degree(degree);
-//    edu_2->set_major(major);
-//    edu_2->set_address(address);
-//  }
-//
-//  // Write the message to log message.
-//  DiffRequest diff_request = ClientUtil::WriteMsgToDiffRequest(message_first,
-//                                                               message_second);
-//
-//  // Implements the differential service.
-//  DiffResponse diff_response = TestStub_.DifferentialService(diff_request);
-//
-//  // Get the test result.
-//  const std::string& test_res = diff_response.result();
-//
-//  // Casting to char* for unit test.
-//  const char* c_test_res = test_res.c_str();
-//
-//  const char* except_res = "SAME";
-//
-//  EXPECT_STREQ(c_test_res, except_res);
-//}
+TEST(DifferentialUnitTest, test_maximum_size_of_input_message_with_100000_repeated_field){
+  /*
+   *  In this testing case, we will try to input two same messages with 50000
+   *  repeated "education" fields.
+   */
+  TestEmployee message_first;
+  TestEmployee message_second;
 
+  for (int i = 0; i < 100000; ++i) {
+    int num = i;
+    std::string name_1 = "A";
+    name_1 = name_1 + "_" + std::to_string(num);
 
+    std::string name_2 = "A";
+    name_2 = name_2 + "_" + std::to_string(num);
 
+    std::string degree = "PhD";
+    std::string major = "Computer Science";
+    std::string address = "CA, US";
 
+    EducationInfo* edu_1 = message_first.add_education();
+    edu_1->set_name(name_1);
+    edu_1->set_degree(degree);
+    edu_1->set_major(major);
+    edu_1->set_address(address);
+
+    EducationInfo* edu_2 = message_second.add_education();
+    edu_2->set_name(name_2);
+    edu_2->set_degree(degree);
+    edu_2->set_major(major);
+    edu_2->set_address(address);
+  }
+
+  // Write the message to log message.
+  DiffRequest diff_request = ClientUtil::WriteMsgToDiffRequest(message_first,
+                                                               message_second);
+
+  // Implements the differential service.
+  DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
+
+  // Get the test result.
+  const std::string& test_res = diff_response.result();
+
+  // Casting to char* for unit test.
+  const char* c_test_res = test_res.c_str();
+
+  const char* except_res = "";
+
+  EXPECT_STREQ(c_test_res, except_res);
+
+  // Check the result error
+  const std::string& test_error = diff_response.error();
+  const char* c_test_error = test_error.c_str();
+  const char* except_error = "The size of request message larger than max(4194304).";
+
+  EXPECT_STREQ(c_test_error, except_error);
+}
 
 // TEST end line.
 }

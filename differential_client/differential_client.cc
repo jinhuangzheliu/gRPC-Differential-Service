@@ -93,6 +93,8 @@ int main(int argc, char* argv[]) {
    *  Write two message for testing.
    *  The .proto file of testing message is located in ../protos/differential_test.proto
    */
+
+
   for (int j = 1; j <= 6; ++j) {
     std::clock_t start, end;
 
@@ -132,14 +134,20 @@ int main(int argc, char* argv[]) {
       edu_2->set_address(address);
     }
 
+
+
+
+
 //    std::cout << message_first.education_size() << std::endl;
 //    std::cout << message_second.education_size() << std::endl;
     // Generate the Differential Request
     DiffRequest diff_request = ClientUtil::WriteMsgToDiffRequest(message_first, message_second);
 
+
+
     // Call Default Differential Service that compare two messages by default.
     DiffResponse diff_response_default =
-        service_client.DefaultDifferentialService(diff_request);
+        service_client.CompareInputMessages(diff_request);
 //    std::cout << "Message differential result (Default): \n"
 //              << diff_response_default.result() << std::endl;
 
@@ -147,7 +155,8 @@ int main(int argc, char* argv[]) {
 
     double time_taken = double(end - start) / double(CLOCKS_PER_SEC);
     std::cout << "Time taken is : " << std::fixed << time_taken << std::setprecision(5);
-    std::cout << " sec " << std::endl;
+    std::cout << " sec \n"
+              << "####################" << std::endl;
 
 
   }

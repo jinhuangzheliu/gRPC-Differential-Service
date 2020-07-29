@@ -33,15 +33,24 @@ bool DifferentialServiceClient::InitializeConnection() {
   return status.ok() && reply.reply() == "12345678";
 }
 
-DiffResponse DifferentialServiceClient::DefaultDifferentialService(const DiffRequest& diff_request) {
+DiffResponse DifferentialServiceClient::CompareInputMessages(const DiffRequest& diff_request) {
   // Initial the differential result.
   DifferentialService::DiffResponse diff_response;
+
+  size_t proto_max_size = 4194304;
+
+  size_t proto_size = diff_request.ByteSizeLong();
+
+  if (proto_size > proto_max_size) {
+    diff_response.set_error("The size of request message larger than max(4194304).");
+    return diff_response;
+  }
 
   // ClientContext define by gRPC.
   ClientContext context;
 
-  // implement the DefaultDifferentialService in differential service.
-  Status status = stub_->DefaultDifferentialService(&context, diff_request, &diff_response);
+  // implement the DifferentialService in differential service.
+  Status status = stub_->CompareInputMessages(&context, diff_request, &diff_response);
 
   // If the status is ok, return the message DiffMsgReply.
   // If not, set the error field by error message and clear the result field
@@ -54,29 +63,5 @@ DiffResponse DifferentialServiceClient::DefaultDifferentialService(const DiffReq
     std::cout << status.error_code() << ": " << status.error_message()
               << std::endl;
     return diff_response;
-  }
-}
-
-DiffResponse DifferentialServiceClient::CompareInputMessages(const DiffRequest& diff_request) {
-  // Initial the differential result.
-  DifferentialService::DiffResponse differ_response;
-
-  // ClientContext define by gRPC.
-  ClientContext context;
-
-  // implement the DifferentialService in differential service.
-  Status status = stub_->CompareInputMessages(&context, diff_request, &differ_response);
-
-  // If the status is ok, return the message DiffMsgReply.
-  // If not, set the error field by error message and clear the result field
-  // then return the message DiffMsgReply.
-  if (status.ok()) {
-    return differ_response;
-  } else {
-    differ_response.set_error(status.error_message());
-    differ_response.clear_result();
-    std::cout << status.error_code() << ": " << status.error_message()
-              << std::endl;
-    return differ_response;
   }
 }

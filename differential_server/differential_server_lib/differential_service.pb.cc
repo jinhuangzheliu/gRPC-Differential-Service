@@ -317,15 +317,12 @@ const char descriptor_table_protodef_differential_5fservice_2eproto[] PROTOBUF_S
   "apCompareNotSameIndex\022E\n\024float_num_compa"
   "rison\030\t \001(\0132\'.DifferentialService.FloatN"
   "umComparison\"-\n\014DiffResponse\022\016\n\006result\030\001"
-  " \001(\t\022\r\n\005error\030\002 \001(\t2\250\002\n\022ServerDifferenti"
+  " \001(\t\022\r\n\005error\030\002 \001(\t2\303\001\n\022ServerDifferenti"
   "al\022N\n\nGetConnect\022\037.DifferentialService.M"
   "sgRequest\032\035.DifferentialService.MsgReply"
-  "\"\000\022c\n\032DefaultDifferentialService\022 .Diffe"
-  "rentialService.DiffRequest\032!.Differentia"
-  "lService.DiffResponse\"\000\022]\n\024CompareInputM"
-  "essages\022 .DifferentialService.DiffReques"
-  "t\032!.DifferentialService.DiffResponse\"\000b\006"
-  "proto3"
+  "\"\000\022]\n\024CompareInputMessages\022 .Differentia"
+  "lService.DiffRequest\032!.DifferentialServi"
+  "ce.DiffResponse\"\000b\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_differential_5fservice_2eproto_deps[1] = {
 };
@@ -343,7 +340,7 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_dif
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_differential_5fservice_2eproto_once;
 static bool descriptor_table_differential_5fservice_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_differential_5fservice_2eproto = {
-  &descriptor_table_differential_5fservice_2eproto_initialized, descriptor_table_protodef_differential_5fservice_2eproto, "differential_service.proto", 1446,
+  &descriptor_table_differential_5fservice_2eproto_initialized, descriptor_table_protodef_differential_5fservice_2eproto, "differential_service.proto", 1345,
   &descriptor_table_differential_5fservice_2eproto_once, descriptor_table_differential_5fservice_2eproto_sccs, descriptor_table_differential_5fservice_2eproto_deps, 9, 0,
   schemas, file_default_instances, TableStruct_differential_5fservice_2eproto::offsets,
   file_level_metadata_differential_5fservice_2eproto, 9, file_level_enum_descriptors_differential_5fservice_2eproto, file_level_service_descriptors_differential_5fservice_2eproto,

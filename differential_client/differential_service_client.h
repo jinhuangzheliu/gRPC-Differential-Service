@@ -39,13 +39,6 @@ class DifferentialServiceClient {
   bool InitializeConnection();
 
   /*
-   * Default message differential service.
-   * [Input Args]: the object of differential request message.
-   * [Return]: the object of differential reply message.
-   */
-  DiffResponse DefaultDifferentialService(const DiffRequest& diff_request);
-
-  /*
    * Differential service. User can set their criteria to
    *                       1) Ignore specific fields,
    *                       2) Treat repeated field as list, set, or map.

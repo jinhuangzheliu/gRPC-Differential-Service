@@ -319,24 +319,24 @@ service ServerDifferential {
   rpc GetConnect(MsgRequest) returns (MsgReply) {}
 
 
-  // Declare how to compare two user input messages as default by MessageDifferencer::Compare().
-  // Users have to structure their message as "message log { ...}" defined below this file.
-  // Similar to the previous method this method is called by stub of DifferentialServer and
-  // passed "message log{}" and the differential result will output by "message result{}".
-  // For example,
-  //    class ServiceClient {
-  //      public:
-  //        std::string DefaultDifferentialService(...){
-  //          ...
-  //          differentialservice::log log_message;
-  //          differentialservice::reslut res;
-  //          Status status = stub_->DefaultDifferentialService( ..., log_message, res);
-  //          ...
-  //        }
-  //      private:
-  //        std::unique_ptr<DifferentialServer::Stub> stub_;
-  //    }
-  rpc DefaultDifferentialService (DiffRequest) returns (DiffResponse) {}
+//  // Declare how to compare two user input messages as default by MessageDifferencer::Compare().
+//  // Users have to structure their message as "message log { ...}" defined below this file.
+//  // Similar to the previous method this method is called by stub of DifferentialServer and
+//  // passed "message log{}" and the differential result will output by "message result{}".
+//  // For example,
+//  //    class ServiceClient {
+//  //      public:
+//  //        std::string DefaultDifferentialService(...){
+//  //          ...
+//  //          differentialservice::log log_message;
+//  //          differentialservice::reslut res;
+//  //          Status status = stub_->DefaultDifferentialService( ..., log_message, res);
+//  //          ...
+//  //        }
+//  //      private:
+//  //        std::unique_ptr<DifferentialServer::Stub> stub_;
+//  //    }
+//  rpc DefaultDifferentialService (DiffRequest) returns (DiffResponse) {}
 
 
   // Declare a customize differential service
