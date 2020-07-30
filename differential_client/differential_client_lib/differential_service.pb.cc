@@ -291,38 +291,38 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
 const char descriptor_table_protodef_differential_5fservice_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n\032differential_service.proto\022\023Differenti"
   "alService\"\035\n\nMsgRequest\022\017\n\007request\030\001 \001(\t"
-  "\"\031\n\010MsgReply\022\r\n\005reply\030\001 \001(\t\"\252\001\n\016IgnoreCr"
+  "\"\031\n\010MsgReply\022\r\n\005reply\030\001 \001(\t\"\267\001\n\016IgnoreCr"
   "iteria\022<\n\004flag\030\001 \001(\0162..DifferentialServi"
   "ce.IgnoreCriteria.IgnoreFlag\022\032\n\022ignore_f"
-  "ields_list\030\002 \003(\t\022\r\n\005regex\030\003 \001(\t\"/\n\nIgnor"
-  "eFlag\022\017\n\013FLAG_IGNORE\020\000\022\020\n\014FLAG_COMPARE\020\001"
-  "\"\215\001\n\rRepeatedField\022<\n\004flag\030\001 \001(\0162..Diffe"
-  "rentialService.RepeatedField.TreatAsFlag"
-  "\022\022\n\nfield_name\030\002 \001(\t\"*\n\013TreatAsFlag\022\r\n\tF"
-  "LAG_LIST\020\000\022\014\n\010FLAG_SET\020\001\"7\n\nMapCompare\022\026"
-  "\n\016repeated_field\030\001 \001(\t\022\021\n\tkey_field\030\002 \003("
-  "\t\"c\n\026MapCompareNotSameIndex\022\026\n\016repeated_"
-  "field\030\001 \001(\t\022\027\n\017first_key_field\030\002 \001(\t\022\030\n\020"
-  "second_key_field\030\003 \001(\t\"6\n\022FloatNumCompar"
-  "ison\022\020\n\010fraction\030\001 \001(\001\022\016\n\006margin\030\002 \001(\001\"\303"
-  "\003\n\013DiffRequest\022\025\n\rfirst_message\030\001 \001(\014\022\026\n"
-  "\016second_message\030\002 \001(\014\022\"\n\032name_of_message"
-  "_descriptor\030\003 \001(\t\022\035\n\025file_descriptor_pro"
-  "to\030\004 \003(\014\0228\n\013user_ignore\030\005 \001(\0132#.Differen"
-  "tialService.IgnoreCriteria\022:\n\016repeated_f"
-  "ield\030\006 \003(\0132\".DifferentialService.Repeate"
-  "dField\0224\n\013map_compare\030\007 \003(\0132\037.Differenti"
-  "alService.MapCompare\022O\n\032map_compare_not_"
-  "same_index\030\010 \001(\0132+.DifferentialService.M"
-  "apCompareNotSameIndex\022E\n\024float_num_compa"
-  "rison\030\t \001(\0132\'.DifferentialService.FloatN"
-  "umComparison\"-\n\014DiffResponse\022\016\n\006result\030\001"
-  " \001(\t\022\r\n\005error\030\002 \001(\t2\303\001\n\022ServerDifferenti"
-  "al\022N\n\nGetConnect\022\037.DifferentialService.M"
-  "sgRequest\032\035.DifferentialService.MsgReply"
-  "\"\000\022]\n\024CompareInputMessages\022 .Differentia"
-  "lService.DiffRequest\032!.DifferentialServi"
-  "ce.DiffResponse\"\000b\006proto3"
+  "ields_list\030\002 \003(\t\022\r\n\005regex\030\003 \001(\t\"<\n\nIgnor"
+  "eFlag\022\013\n\007INVALID\020\000\022\017\n\013FLAG_IGNORE\020\001\022\020\n\014F"
+  "LAG_COMPARE\020\002\"\216\001\n\rRepeatedField\022<\n\004flag\030"
+  "\001 \001(\0162..DifferentialService.RepeatedFiel"
+  "d.TreatAsFlag\022\022\n\nfield_name\030\002 \001(\t\"+\n\013Tre"
+  "atAsFlag\022\020\n\014DEFAULT_LIST\020\000\022\n\n\006AS_SET\020\001\"7"
+  "\n\nMapCompare\022\026\n\016repeated_field\030\001 \001(\t\022\021\n\t"
+  "key_field\030\002 \003(\t\"c\n\026MapCompareNotSameInde"
+  "x\022\026\n\016repeated_field\030\001 \001(\t\022\027\n\017first_key_f"
+  "ield\030\002 \001(\t\022\030\n\020second_key_field\030\003 \001(\t\"6\n\022"
+  "FloatNumComparison\022\020\n\010fraction\030\001 \001(\001\022\016\n\006"
+  "margin\030\002 \001(\001\"\303\003\n\013DiffRequest\022\025\n\rfirst_me"
+  "ssage\030\001 \001(\014\022\026\n\016second_message\030\002 \001(\014\022\"\n\032n"
+  "ame_of_message_descriptor\030\003 \001(\t\022\035\n\025file_"
+  "descriptor_proto\030\004 \003(\014\0228\n\013user_ignore\030\005 "
+  "\001(\0132#.DifferentialService.IgnoreCriteria"
+  "\022:\n\016repeated_field\030\006 \003(\0132\".DifferentialS"
+  "ervice.RepeatedField\0224\n\013map_compare\030\007 \003("
+  "\0132\037.DifferentialService.MapCompare\022O\n\032ma"
+  "p_compare_not_same_index\030\010 \001(\0132+.Differe"
+  "ntialService.MapCompareNotSameIndex\022E\n\024f"
+  "loat_num_comparison\030\t \001(\0132\'.Differential"
+  "Service.FloatNumComparison\"-\n\014DiffRespon"
+  "se\022\016\n\006result\030\001 \001(\t\022\r\n\005error\030\002 \001(\t2\303\001\n\022Se"
+  "rverDifferential\022N\n\nGetConnect\022\037.Differe"
+  "ntialService.MsgRequest\032\035.DifferentialSe"
+  "rvice.MsgReply\"\000\022]\n\024CompareInputMessages"
+  "\022 .DifferentialService.DiffRequest\032!.Dif"
+  "ferentialService.DiffResponse\"\000b\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_differential_5fservice_2eproto_deps[1] = {
 };
@@ -340,7 +340,7 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_dif
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_differential_5fservice_2eproto_once;
 static bool descriptor_table_differential_5fservice_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_differential_5fservice_2eproto = {
-  &descriptor_table_differential_5fservice_2eproto_initialized, descriptor_table_protodef_differential_5fservice_2eproto, "differential_service.proto", 1345,
+  &descriptor_table_differential_5fservice_2eproto_initialized, descriptor_table_protodef_differential_5fservice_2eproto, "differential_service.proto", 1359,
   &descriptor_table_differential_5fservice_2eproto_once, descriptor_table_differential_5fservice_2eproto_sccs, descriptor_table_differential_5fservice_2eproto_deps, 9, 0,
   schemas, file_default_instances, TableStruct_differential_5fservice_2eproto::offsets,
   file_level_metadata_differential_5fservice_2eproto, 9, file_level_enum_descriptors_differential_5fservice_2eproto, file_level_service_descriptors_differential_5fservice_2eproto,
@@ -357,6 +357,7 @@ bool IgnoreCriteria_IgnoreFlag_IsValid(int value) {
   switch (value) {
     case 0:
     case 1:
+    case 2:
       return true;
     default:
       return false;
@@ -364,6 +365,7 @@ bool IgnoreCriteria_IgnoreFlag_IsValid(int value) {
 }
 
 #if (__cplusplus < 201703) && (!defined(_MSC_VER) || _MSC_VER >= 1900)
+constexpr IgnoreCriteria_IgnoreFlag IgnoreCriteria::INVALID;
 constexpr IgnoreCriteria_IgnoreFlag IgnoreCriteria::FLAG_IGNORE;
 constexpr IgnoreCriteria_IgnoreFlag IgnoreCriteria::FLAG_COMPARE;
 constexpr IgnoreCriteria_IgnoreFlag IgnoreCriteria::IgnoreFlag_MIN;
@@ -385,8 +387,8 @@ bool RepeatedField_TreatAsFlag_IsValid(int value) {
 }
 
 #if (__cplusplus < 201703) && (!defined(_MSC_VER) || _MSC_VER >= 1900)
-constexpr RepeatedField_TreatAsFlag RepeatedField::FLAG_LIST;
-constexpr RepeatedField_TreatAsFlag RepeatedField::FLAG_SET;
+constexpr RepeatedField_TreatAsFlag RepeatedField::DEFAULT_LIST;
+constexpr RepeatedField_TreatAsFlag RepeatedField::AS_SET;
 constexpr RepeatedField_TreatAsFlag RepeatedField::TreatAsFlag_MIN;
 constexpr RepeatedField_TreatAsFlag RepeatedField::TreatAsFlag_MAX;
 constexpr int RepeatedField::TreatAsFlag_ARRAYSIZE;

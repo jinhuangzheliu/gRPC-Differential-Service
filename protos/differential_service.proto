@@ -60,8 +60,9 @@ message IgnoreCriteria{
   //  ServiceClient::whiteListCriteria(log_message, compare_fields);
   //
   enum IgnoreFlag{
-    FLAG_IGNORE = 0;
-    FLAG_COMPARE = 1;
+    INVALID = 0;
+    FLAG_IGNORE = 1;
+    FLAG_COMPARE = 2;
   }
   IgnoreFlag flag = 1;
 
@@ -97,8 +98,8 @@ message RepeatedField{
   //  ServiceClient::treat_repeated_field_list_or_set(log_message, 0, field_1);
 
   enum TreatAsFlag{
-    FLAG_LIST = 0;
-    FLAG_SET = 1;
+    DEFAULT_LIST = 0;
+    AS_SET = 1;
   }
   TreatAsFlag flag = 1;
 

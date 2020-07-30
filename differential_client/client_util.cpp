@@ -97,7 +97,7 @@ void ClientUtil::RegexCriteria(DiffRequest* diff_request,
 }
 
 void ClientUtil::TreatRepeatedFieldAsListOrSet(DiffRequest* diff_request,
-                                               const int flag,
+                                               bool treat_as_default,
                                                const std::string& field_name) {
   // Get the pointer of the Repeated Field Tuple, which defined in
   // differential_service.proto
@@ -105,12 +105,12 @@ void ClientUtil::TreatRepeatedFieldAsListOrSet(DiffRequest* diff_request,
       diff_request->add_repeated_field();
 
   // Set the treat as flag.
-  if (flag == 0) {
+  if (treat_as_default) {
     tuple_ptr->set_flag(
-        DifferentialService::RepeatedField_TreatAsFlag_FLAG_LIST);
-  } else if (flag == 1) {
+        DifferentialService::RepeatedField_TreatAsFlag_DEFAULT_LIST);
+  } else {
     tuple_ptr->set_flag(
-        DifferentialService::RepeatedField_TreatAsFlag_FLAG_SET);
+        DifferentialService::RepeatedField_TreatAsFlag_AS_SET);
   }
   // Set the field name.
   tuple_ptr->set_field_name(field_name);

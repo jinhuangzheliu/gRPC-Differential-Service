@@ -98,22 +98,12 @@ ServerDifferential::Service::Service() {
       ServerDifferential_method_names[0],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< ServerDifferential::Service, ::DifferentialService::MsgRequest, ::DifferentialService::MsgReply>(
-          [](ServerDifferential::Service* service,
-             ::grpc_impl::ServerContext* ctx,
-             const ::DifferentialService::MsgRequest* req,
-             ::DifferentialService::MsgReply* resp) {
-               return service->GetConnect(ctx, req, resp);
-             }, this)));
+          std::mem_fn(&ServerDifferential::Service::GetConnect), this)));
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       ServerDifferential_method_names[1],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< ServerDifferential::Service, ::DifferentialService::DiffRequest, ::DifferentialService::DiffResponse>(
-          [](ServerDifferential::Service* service,
-             ::grpc_impl::ServerContext* ctx,
-             const ::DifferentialService::DiffRequest* req,
-             ::DifferentialService::DiffResponse* resp) {
-               return service->CompareInputMessages(ctx, req, resp);
-             }, this)));
+          std::mem_fn(&ServerDifferential::Service::CompareInputMessages), this)));
 }
 
 ServerDifferential::Service::~Service() {

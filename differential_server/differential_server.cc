@@ -429,8 +429,7 @@ class MessageServiceImpl final : public ServerDifferential::Service
       if (user_ignoreCriteria.ignore_fields_list_size() != 0) {
         // 1) Check the IgnoreFlag set by user. The IgnoreFlag is a binary option.
         // ...FLAG_IGNORE or ...FLAG_COMPARE
-        if (user_ignoreCriteria.flag() == DifferentialService::IgnoreCriteria_IgnoreFlag_FLAG_IGNORE)
-        {
+        if (user_ignoreCriteria.flag() == DifferentialService::IgnoreCriteria_IgnoreFlag_FLAG_IGNORE){
           auto* tmp_criteria = new IgnoreFieldImpl();
           // loop the fields and insert to the tmp_criteria
           for (int i = 0; i < user_ignoreCriteria.ignore_fields_list_size(); ++i) {
@@ -438,14 +437,17 @@ class MessageServiceImpl final : public ServerDifferential::Service
           }
           ignoreCriteria = tmp_criteria;
         }
-        else
-          // IgnoreCriteria_IgnoreFlag_FLAG_COMPARE
-        {
+        else if (user_ignoreCriteria.flag() == DifferentialService::IgnoreCriteria_IgnoreFlag_FLAG_COMPARE){
           auto* tmp_criteria = new CompareFieldImpl();
+
           for (int i = 0; i < user_ignoreCriteria.ignore_fields_list_size(); ++i) {
             tmp_criteria->AddField(user_ignoreCriteria.ignore_fields_list(i));
           }
           ignoreCriteria = tmp_criteria;
+        }
+        else {
+          // HANDLE exception if the IgnoreFlag set as INVALID. Actually, this will not happened in the normal situation.
+          diff_response->set_error("ERROR: The IgnoreCriteria_IgnoreFlag is set by \"INVALID\".");
         }
 
         // Add the ignoreCriteria to the differencer if set.
@@ -485,8 +487,7 @@ class MessageServiceImpl final : public ServerDifferential::Service
         // Get the repeated field Tuple <flag, field_name> flag is binary option ...FLAG_LIST or ...FLAG_SET
         const DifferentialService::RepeatedField& repeated_field_tuple = diff_request->repeated_field(i);
 
-        if (repeated_field_tuple.flag() == DifferentialService::RepeatedField_TreatAsFlag_FLAG_LIST)
-        {
+        if (repeated_field_tuple.flag() == DifferentialService::RepeatedField_TreatAsFlag_DEFAULT_LIST){
           // Get the field name
           const std::string& field_name = repeated_field_tuple.field_name();
           // Get the field descriptor by name.

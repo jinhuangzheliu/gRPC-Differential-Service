@@ -88,7 +88,7 @@ class ClientUtil {
    * [Return]: void
    */
   static void TreatRepeatedFieldAsListOrSet(DiffRequest* diff_request,
-                                            const int flag,
+                                            bool treat_as_default,
                                             const std::string& field_name);
 
   /*

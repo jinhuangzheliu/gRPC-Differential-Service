@@ -706,14 +706,7 @@ class ServerDifferential final {
    public:
     WithStreamedUnaryMethod_GetConnect() {
       ::grpc::Service::MarkMethodStreamed(0,
-        new ::grpc::internal::StreamedUnaryHandler<
-          ::DifferentialService::MsgRequest, ::DifferentialService::MsgReply>(
-            [this](::grpc_impl::ServerContext* context,
-                   ::grpc_impl::ServerUnaryStreamer<
-                     ::DifferentialService::MsgRequest, ::DifferentialService::MsgReply>* streamer) {
-                       return this->StreamedGetConnect(context,
-                         streamer);
-                  }));
+        new ::grpc::internal::StreamedUnaryHandler< ::DifferentialService::MsgRequest, ::DifferentialService::MsgReply>(std::bind(&WithStreamedUnaryMethod_GetConnect<BaseClass>::StreamedGetConnect, this, std::placeholders::_1, std::placeholders::_2)));
     }
     ~WithStreamedUnaryMethod_GetConnect() override {
       BaseClassMustBeDerivedFromService(this);
@@ -733,14 +726,7 @@ class ServerDifferential final {
    public:
     WithStreamedUnaryMethod_CompareInputMessages() {
       ::grpc::Service::MarkMethodStreamed(1,
-        new ::grpc::internal::StreamedUnaryHandler<
-          ::DifferentialService::DiffRequest, ::DifferentialService::DiffResponse>(
-            [this](::grpc_impl::ServerContext* context,
-                   ::grpc_impl::ServerUnaryStreamer<
-                     ::DifferentialService::DiffRequest, ::DifferentialService::DiffResponse>* streamer) {
-                       return this->StreamedCompareInputMessages(context,
-                         streamer);
-                  }));
+        new ::grpc::internal::StreamedUnaryHandler< ::DifferentialService::DiffRequest, ::DifferentialService::DiffResponse>(std::bind(&WithStreamedUnaryMethod_CompareInputMessages<BaseClass>::StreamedCompareInputMessages, this, std::placeholders::_1, std::placeholders::_2)));
     }
     ~WithStreamedUnaryMethod_CompareInputMessages() override {
       BaseClassMustBeDerivedFromService(this);

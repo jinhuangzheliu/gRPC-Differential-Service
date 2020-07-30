@@ -98,13 +98,14 @@ PROTOBUF_NAMESPACE_CLOSE
 namespace DifferentialService {
 
 enum IgnoreCriteria_IgnoreFlag : int {
-  IgnoreCriteria_IgnoreFlag_FLAG_IGNORE = 0,
-  IgnoreCriteria_IgnoreFlag_FLAG_COMPARE = 1,
+  IgnoreCriteria_IgnoreFlag_INVALID = 0,
+  IgnoreCriteria_IgnoreFlag_FLAG_IGNORE = 1,
+  IgnoreCriteria_IgnoreFlag_FLAG_COMPARE = 2,
   IgnoreCriteria_IgnoreFlag_IgnoreCriteria_IgnoreFlag_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   IgnoreCriteria_IgnoreFlag_IgnoreCriteria_IgnoreFlag_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool IgnoreCriteria_IgnoreFlag_IsValid(int value);
-constexpr IgnoreCriteria_IgnoreFlag IgnoreCriteria_IgnoreFlag_IgnoreFlag_MIN = IgnoreCriteria_IgnoreFlag_FLAG_IGNORE;
+constexpr IgnoreCriteria_IgnoreFlag IgnoreCriteria_IgnoreFlag_IgnoreFlag_MIN = IgnoreCriteria_IgnoreFlag_INVALID;
 constexpr IgnoreCriteria_IgnoreFlag IgnoreCriteria_IgnoreFlag_IgnoreFlag_MAX = IgnoreCriteria_IgnoreFlag_FLAG_COMPARE;
 constexpr int IgnoreCriteria_IgnoreFlag_IgnoreFlag_ARRAYSIZE = IgnoreCriteria_IgnoreFlag_IgnoreFlag_MAX + 1;
 
@@ -123,14 +124,14 @@ inline bool IgnoreCriteria_IgnoreFlag_Parse(
     IgnoreCriteria_IgnoreFlag_descriptor(), name, value);
 }
 enum RepeatedField_TreatAsFlag : int {
-  RepeatedField_TreatAsFlag_FLAG_LIST = 0,
-  RepeatedField_TreatAsFlag_FLAG_SET = 1,
+  RepeatedField_TreatAsFlag_DEFAULT_LIST = 0,
+  RepeatedField_TreatAsFlag_AS_SET = 1,
   RepeatedField_TreatAsFlag_RepeatedField_TreatAsFlag_INT_MIN_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::min(),
   RepeatedField_TreatAsFlag_RepeatedField_TreatAsFlag_INT_MAX_SENTINEL_DO_NOT_USE_ = std::numeric_limits<::PROTOBUF_NAMESPACE_ID::int32>::max()
 };
 bool RepeatedField_TreatAsFlag_IsValid(int value);
-constexpr RepeatedField_TreatAsFlag RepeatedField_TreatAsFlag_TreatAsFlag_MIN = RepeatedField_TreatAsFlag_FLAG_LIST;
-constexpr RepeatedField_TreatAsFlag RepeatedField_TreatAsFlag_TreatAsFlag_MAX = RepeatedField_TreatAsFlag_FLAG_SET;
+constexpr RepeatedField_TreatAsFlag RepeatedField_TreatAsFlag_TreatAsFlag_MIN = RepeatedField_TreatAsFlag_DEFAULT_LIST;
+constexpr RepeatedField_TreatAsFlag RepeatedField_TreatAsFlag_TreatAsFlag_MAX = RepeatedField_TreatAsFlag_AS_SET;
 constexpr int RepeatedField_TreatAsFlag_TreatAsFlag_ARRAYSIZE = RepeatedField_TreatAsFlag_TreatAsFlag_MAX + 1;
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* RepeatedField_TreatAsFlag_descriptor();
@@ -523,6 +524,8 @@ class IgnoreCriteria :
   // nested types ----------------------------------------------------
 
   typedef IgnoreCriteria_IgnoreFlag IgnoreFlag;
+  static constexpr IgnoreFlag INVALID =
+    IgnoreCriteria_IgnoreFlag_INVALID;
   static constexpr IgnoreFlag FLAG_IGNORE =
     IgnoreCriteria_IgnoreFlag_FLAG_IGNORE;
   static constexpr IgnoreFlag FLAG_COMPARE =
@@ -725,10 +728,10 @@ class RepeatedField :
   // nested types ----------------------------------------------------
 
   typedef RepeatedField_TreatAsFlag TreatAsFlag;
-  static constexpr TreatAsFlag FLAG_LIST =
-    RepeatedField_TreatAsFlag_FLAG_LIST;
-  static constexpr TreatAsFlag FLAG_SET =
-    RepeatedField_TreatAsFlag_FLAG_SET;
+  static constexpr TreatAsFlag DEFAULT_LIST =
+    RepeatedField_TreatAsFlag_DEFAULT_LIST;
+  static constexpr TreatAsFlag AS_SET =
+    RepeatedField_TreatAsFlag_AS_SET;
   static inline bool TreatAsFlag_IsValid(int value) {
     return RepeatedField_TreatAsFlag_IsValid(value);
   }

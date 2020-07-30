@@ -1052,7 +1052,7 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_list_same){
   //******************** Test Content ****************************************
   // Set the repeated field "areas" as list
   std::string field = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, field);
 
 
   // ********************** Differential Service **********************
@@ -1107,7 +1107,7 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_list_diff){
   //******************** Test Content ****************************************
   // Set the field areas as list
   std::string field_1 = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, field_1);
 
 
   // ********************** Differential Service **********************
@@ -1144,16 +1144,6 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_list_same){
   TestEmployee message_second;
 
   // ******************** write two messages **********************
-  // Write two message with same value and same order.
-//  message_first.add_areas("Google Ads.");
-//  message_first.add_areas("YouTube Ads.");
-//  message_first.add_areas("Search Ads.");
-//  message_first.add_areas("Click Ads.");
-//
-//  message_second.add_areas("Google Ads.");
-//  message_second.add_areas("YouTube Ads.");
-//  message_second.add_areas("Search Ads.");
-//  message_second.add_areas("Click Ads.");
 
   // Write the nested field for two messages.
   DifferentialTest::DependentInfo* dependentInfo_ptr_1 =
@@ -1178,11 +1168,8 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_list_same){
                                                                    message_second);
 
   //******************** Test Content ****************************************
-  // Set the field areas as list
-//  std::string field_1 = "areas";
-//  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field_1);
   std::string field = "dependents.name";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, field);
 
 
   // ********************** Differential Service **********************
@@ -1218,17 +1205,6 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_list_diff){
   TestEmployee message_second;
 
   // ******************** write two messages **********************
-  // Write two message with same value and same order.
-//  message_first.add_areas("Google Ads.");
-//  message_first.add_areas("YouTube Ads.");
-//  message_first.add_areas("Search Ads.");
-//  message_first.add_areas("Click Ads.");
-//
-//  message_second.add_areas("Google Ads.");
-//  message_second.add_areas("YouTube Ads.");
-//  message_second.add_areas("Search Ads.");
-//  message_second.add_areas("Click Ads.");
-
   // Write the nested field for two messages.
   DifferentialTest::DependentInfo* dependentInfo_ptr_1 =
       message_first.mutable_dependents();
@@ -1255,7 +1231,7 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_list_diff){
 //  std::string field_1 = "areas";
 //  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field_1);
   std::string field = "dependents.name";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, field);
 
 
   // ********************** Differential Service **********************
@@ -1340,11 +1316,11 @@ TEST(DifferentialUnitTest, test_multiple_repeated_fields_treat_as_list_same){
   //******************** Test Content ****************************************
   // Set the field areas as list
   std::string field_1 = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, field_1);
   std::string field_2 = "dependents.name";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field_2);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, field_2);
   std::string field_3 = "dependents.age";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field_3);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, field_3);
 
 
   // ********************** Differential Service **********************
@@ -1427,11 +1403,11 @@ TEST(DifferentialUnitTest, test_multiple_repeated_fields_treat_as_list_diff){
   //******************** Test Content ****************************************
   // Set the field areas as list
   std::string field_1 = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, field_1);
   std::string field_2 = "dependents.name";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field_2);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, field_2);
   std::string field_3 = "dependents.age";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field_3);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, field_3);
 
 
   // ********************** Differential Service **********************
@@ -1489,7 +1465,7 @@ TEST(DifferentialUnitTest, test_repleated_field_treat_as_list_delete_item){
   //******************** Test Content ****************************************
   // Set the field areas as list
   std::string field_1 = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, field_1);
 
 
   // ********************** Differential Service **********************
@@ -1542,7 +1518,7 @@ TEST(DifferentialUnitTest, test_repleated_field_treat_as_list_add_item){
 
   // Set the field areas as list
   std::string field_1 = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, field_1);
 
   // Implements the differential service.
    DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
@@ -1592,7 +1568,7 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_set_same){
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_1);
 
   // Implements the differential service.
    DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
@@ -1645,7 +1621,7 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_set_diff){
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_1);
 
   // Implements the differential service.
    DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
@@ -1696,7 +1672,7 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_set_delete){
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_1);
 
   // Implements the differential service.
    DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
@@ -1746,7 +1722,7 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_set_add){
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_1);
 
   // Implements the differential service.
    DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
@@ -1795,7 +1771,7 @@ TEST(DifferentialUnitTest, test_repeated_field_treat_as_set_add_more_fields){
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_1);
 
   // Implements the differential service.
    DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
@@ -1875,13 +1851,13 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_set_same){
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_1);
 
   std::string field_2 = "dependents.name";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_2);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_2);
 
   std::string field_3 = "dependents.age";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_3);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_3);
 
   // Implements the differential service.
    DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
@@ -1957,13 +1933,13 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_set_add){
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_1);
 
   std::string field_2 = "dependents.name";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_2);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_2);
 
   std::string field_3 = "dependents.age";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_3);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_3);
 
   // Implements the differential service.
    DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
@@ -2041,13 +2017,13 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_set_delete){
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_1);
 
   std::string field_2 = "dependents.name";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_2);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_2);
 
   std::string field_3 = "dependents.age";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_3);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_3);
 
   // Implements the differential service.
    DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
@@ -2126,13 +2102,13 @@ TEST(DifferentialUnitTest, repeated_set_9){
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_1);
 
   std::string field_2 = "dependents.name";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_2);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_2);
 
   std::string field_3 = "dependents.age";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_3);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_3);
 
   // Implements the differential service.
    DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
@@ -2211,13 +2187,13 @@ TEST(DifferentialUnitTest, test_repeated_nested_field_treat_as_set_delete_and_ad
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_1);
 
   std::string field_2 = "dependents.name";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_2);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_2);
 
   std::string field_3 = "dependents.age";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_3);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_3);
 
   // Implements the differential service.
    DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
@@ -2300,13 +2276,13 @@ TEST(DifferentialUnitTest, test_repeated_fields_treat_as_list_and_set){
 
   // Set the field areas as set
   std::string field_1 = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, field_1);
 
   std::string field_2 = "dependents.name";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, field_2);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, field_2);
 
   std::string field_3 = "dependents.age";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, field_3);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, field_3);
 
   // Implements the differential service.
    DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
@@ -3050,7 +3026,7 @@ TEST(DifferentialUnitTest, test_ignore_and_treatASList){
 
   // Set the field areas as list
   std::string repeated_field = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, repeated_field);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, repeated_field);
 
   // Implements the differential service.
    DiffResponse diff_response = TestStub_.CompareInputMessages(diff_request);
@@ -3120,7 +3096,7 @@ TEST(DifferentialUnitTest, test_ignore_and_treatASList_treatASMap){
 
   // Set the field areas as list
   std::string repeated_field = "areas";
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, repeated_field);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, repeated_field);
 
   // Set the map value for repeated filed compare.
   std::string map_field_name = "education";
@@ -3253,15 +3229,15 @@ TEST(DifferentialUnitTest, test_ignore_and_treatASList_treatASMap_fractionAndMar
 
   // Set the field areas as list
   std::string repeated_field_1("areas");
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 0, repeated_field_1);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, true, repeated_field_1);
 
   // Set the field dependents.name as set
   std::string repeated_field_2("dependents.name");
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, repeated_field_2);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, repeated_field_2);
 
   // Set the field dependents.age as set
   std::string repeated_field_3("dependents.age");
-  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, 1, repeated_field_3);
+  ClientUtil::TreatRepeatedFieldAsListOrSet(&diff_request, false, repeated_field_3);
 
   // Set the map value comparison
   std::string map_field_name("education");
