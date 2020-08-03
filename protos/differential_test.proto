@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package DifferentialTest;
 
-import "differential_service.proto";
-
 // nested message for message employee
 message Company{
   string name = 1;
