@@ -35,6 +35,24 @@
 
 namespace DifferentialService {
 
+// To call service methods, user need to create a "std::unique_ptr<DifferentialServer::Stub> stub_"
+// in their channel with the specific server address and port number.
+// For example,
+//    class ServiceClient {
+//      public:
+//        explicit ServiceClient(const std::chared_ptr<Channel>& channel)
+//                      : stub_(DifferentialServer::NewStub(channel)) {}
+//
+//      private:
+//        std::unique_ptr<DifferentialServer::Stub> stub_;
+//
+//    int main(...) {
+//        std::string target_str;    // Establish the gRPC channel with the port number.
+//        target_str = "0.0.0.0:50053";
+//
+//        //Initial the service client instance.
+//        ServiceClient serviceClient(
+//        grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
 class ServerDifferential final {
  public:
   static constexpr char const* service_full_name() {
@@ -43,72 +61,6 @@ class ServerDifferential final {
   class StubInterface {
    public:
     virtual ~StubInterface() {}
-    // To call service methods, user need to create a "std::unique_ptr<DifferentialServer::Stub> stub_"
-    // in their channel with the specific server address and port number.
-    // For example,
-    //    class ServiceClient {
-    //      public:
-    //        explicit ServiceClient(const std::chared_ptr<Channel>& channel)
-    //                      : stub_(DifferentialServer::NewStub(channel)) {}
-    //
-    //      private:
-    //        std::unique_ptr<DifferentialServer::Stub> stub_;
-    //
-    //    int main(...) {
-    //        std::string target_str;    // Establish the gRPC channel with the port number.
-    //        target_str = "0.0.0.0:50053";
-    //
-    //        //Initial the service client instance.
-    //        ServiceClient serviceClient(
-    //        grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-    //
-    // Declare a method to check the connect between the client and server that send a query and receive a response from server.
-    // This method was call by the stub of DifferentialServer. User's query is passed by "message MsgRequest{ ... }" and
-    // server's response receive from "message MsgReply { ... }"
-    // For example,
-    //    class ServiceClient {
-    //      public:
-    //        std::string GetConnect(const std::string& msg){
-    //          ...
-    //          MsgRequest request;
-    //          request.set_request(msg);
-    //
-    //          MsgReply reply;
-    //
-    //          ClientContext context;
-    //
-    //          Status status = stub_->GetConnect(&context, request, &reply);
-    //          ...
-    //        }
-    //      private:
-    //        std::unique_ptr<DifferentialServer::Stub> stub_;
-    //    }
-    virtual ::grpc::Status GetConnect(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest& request, ::DifferentialService::MsgReply* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::DifferentialService::MsgReply>> AsyncGetConnect(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::DifferentialService::MsgReply>>(AsyncGetConnectRaw(context, request, cq));
-    }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::DifferentialService::MsgReply>> PrepareAsyncGetConnect(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::DifferentialService::MsgReply>>(PrepareAsyncGetConnectRaw(context, request, cq));
-    }
-    //  // Declare how to compare two user input messages as default by MessageDifferencer::Compare().
-    //  // Users have to structure their message as "message log { ...}" defined below this file.
-    //  // Similar to the previous method this method is called by stub of DifferentialServer and
-    //  // passed "message log{}" and the differential result will output by "message result{}".
-    //  // For example,
-    //  //    class ServiceClient {
-    //  //      public:
-    //  //        std::string DefaultDifferentialService(...){
-    //  //          ...
-    //  //          differentialservice::log log_message;
-    //  //          differentialservice::reslut res;
-    //  //          Status status = stub_->DefaultDifferentialService( ..., log_message, res);
-    //  //          ...
-    //  //        }
-    //  //      private:
-    //  //        std::unique_ptr<DifferentialServer::Stub> stub_;
-    //  //    }
-    //  rpc DefaultDifferentialService (DiffRequest) returns (DiffResponse) {}
-    //
     // Declare a customize differential service
     // 1. Add one/more ignore criteria.
     //    By setting the "ignoreCriteria user_ignore = 5;" in "message log {}",
@@ -140,77 +92,6 @@ class ServerDifferential final {
     class experimental_async_interface {
      public:
       virtual ~experimental_async_interface() {}
-      // To call service methods, user need to create a "std::unique_ptr<DifferentialServer::Stub> stub_"
-      // in their channel with the specific server address and port number.
-      // For example,
-      //    class ServiceClient {
-      //      public:
-      //        explicit ServiceClient(const std::chared_ptr<Channel>& channel)
-      //                      : stub_(DifferentialServer::NewStub(channel)) {}
-      //
-      //      private:
-      //        std::unique_ptr<DifferentialServer::Stub> stub_;
-      //
-      //    int main(...) {
-      //        std::string target_str;    // Establish the gRPC channel with the port number.
-      //        target_str = "0.0.0.0:50053";
-      //
-      //        //Initial the service client instance.
-      //        ServiceClient serviceClient(
-      //        grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-      //
-      // Declare a method to check the connect between the client and server that send a query and receive a response from server.
-      // This method was call by the stub of DifferentialServer. User's query is passed by "message MsgRequest{ ... }" and
-      // server's response receive from "message MsgReply { ... }"
-      // For example,
-      //    class ServiceClient {
-      //      public:
-      //        std::string GetConnect(const std::string& msg){
-      //          ...
-      //          MsgRequest request;
-      //          request.set_request(msg);
-      //
-      //          MsgReply reply;
-      //
-      //          ClientContext context;
-      //
-      //          Status status = stub_->GetConnect(&context, request, &reply);
-      //          ...
-      //        }
-      //      private:
-      //        std::unique_ptr<DifferentialServer::Stub> stub_;
-      //    }
-      virtual void GetConnect(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest* request, ::DifferentialService::MsgReply* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void GetConnect(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::DifferentialService::MsgReply* response, std::function<void(::grpc::Status)>) = 0;
-      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      virtual void GetConnect(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest* request, ::DifferentialService::MsgReply* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      #else
-      virtual void GetConnect(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest* request, ::DifferentialService::MsgReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
-      #endif
-      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      virtual void GetConnect(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::DifferentialService::MsgReply* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      #else
-      virtual void GetConnect(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::DifferentialService::MsgReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) = 0;
-      #endif
-      //  // Declare how to compare two user input messages as default by MessageDifferencer::Compare().
-      //  // Users have to structure their message as "message log { ...}" defined below this file.
-      //  // Similar to the previous method this method is called by stub of DifferentialServer and
-      //  // passed "message log{}" and the differential result will output by "message result{}".
-      //  // For example,
-      //  //    class ServiceClient {
-      //  //      public:
-      //  //        std::string DefaultDifferentialService(...){
-      //  //          ...
-      //  //          differentialservice::log log_message;
-      //  //          differentialservice::reslut res;
-      //  //          Status status = stub_->DefaultDifferentialService( ..., log_message, res);
-      //  //          ...
-      //  //        }
-      //  //      private:
-      //  //        std::unique_ptr<DifferentialServer::Stub> stub_;
-      //  //    }
-      //  rpc DefaultDifferentialService (DiffRequest) returns (DiffResponse) {}
-      //
       // Declare a customize differential service
       // 1. Add one/more ignore criteria.
       //    By setting the "ignoreCriteria user_ignore = 5;" in "message log {}",
@@ -253,21 +134,12 @@ class ServerDifferential final {
     #endif
     virtual class experimental_async_interface* experimental_async() { return nullptr; }
   private:
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::DifferentialService::MsgReply>* AsyncGetConnectRaw(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::DifferentialService::MsgReply>* PrepareAsyncGetConnectRaw(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::DifferentialService::DiffResponse>* AsyncCompareInputMessagesRaw(::grpc::ClientContext* context, const ::DifferentialService::DiffRequest& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::DifferentialService::DiffResponse>* PrepareAsyncCompareInputMessagesRaw(::grpc::ClientContext* context, const ::DifferentialService::DiffRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel);
-    ::grpc::Status GetConnect(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest& request, ::DifferentialService::MsgReply* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::DifferentialService::MsgReply>> AsyncGetConnect(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::DifferentialService::MsgReply>>(AsyncGetConnectRaw(context, request, cq));
-    }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::DifferentialService::MsgReply>> PrepareAsyncGetConnect(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::DifferentialService::MsgReply>>(PrepareAsyncGetConnectRaw(context, request, cq));
-    }
     ::grpc::Status CompareInputMessages(::grpc::ClientContext* context, const ::DifferentialService::DiffRequest& request, ::DifferentialService::DiffResponse* response) override;
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::DifferentialService::DiffResponse>> AsyncCompareInputMessages(::grpc::ClientContext* context, const ::DifferentialService::DiffRequest& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::DifferentialService::DiffResponse>>(AsyncCompareInputMessagesRaw(context, request, cq));
@@ -278,18 +150,6 @@ class ServerDifferential final {
     class experimental_async final :
       public StubInterface::experimental_async_interface {
      public:
-      void GetConnect(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest* request, ::DifferentialService::MsgReply* response, std::function<void(::grpc::Status)>) override;
-      void GetConnect(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::DifferentialService::MsgReply* response, std::function<void(::grpc::Status)>) override;
-      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      void GetConnect(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest* request, ::DifferentialService::MsgReply* response, ::grpc::ClientUnaryReactor* reactor) override;
-      #else
-      void GetConnect(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest* request, ::DifferentialService::MsgReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
-      #endif
-      #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      void GetConnect(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::DifferentialService::MsgReply* response, ::grpc::ClientUnaryReactor* reactor) override;
-      #else
-      void GetConnect(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::DifferentialService::MsgReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) override;
-      #endif
       void CompareInputMessages(::grpc::ClientContext* context, const ::DifferentialService::DiffRequest* request, ::DifferentialService::DiffResponse* response, std::function<void(::grpc::Status)>) override;
       void CompareInputMessages(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::DifferentialService::DiffResponse* response, std::function<void(::grpc::Status)>) override;
       #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
@@ -313,11 +173,8 @@ class ServerDifferential final {
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
     class experimental_async async_stub_{this};
-    ::grpc::ClientAsyncResponseReader< ::DifferentialService::MsgReply>* AsyncGetConnectRaw(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::DifferentialService::MsgReply>* PrepareAsyncGetConnectRaw(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::DifferentialService::DiffResponse>* AsyncCompareInputMessagesRaw(::grpc::ClientContext* context, const ::DifferentialService::DiffRequest& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::DifferentialService::DiffResponse>* PrepareAsyncCompareInputMessagesRaw(::grpc::ClientContext* context, const ::DifferentialService::DiffRequest& request, ::grpc::CompletionQueue* cq) override;
-    const ::grpc::internal::RpcMethod rpcmethod_GetConnect_;
     const ::grpc::internal::RpcMethod rpcmethod_CompareInputMessages_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
@@ -326,66 +183,6 @@ class ServerDifferential final {
    public:
     Service();
     virtual ~Service();
-    // To call service methods, user need to create a "std::unique_ptr<DifferentialServer::Stub> stub_"
-    // in their channel with the specific server address and port number.
-    // For example,
-    //    class ServiceClient {
-    //      public:
-    //        explicit ServiceClient(const std::chared_ptr<Channel>& channel)
-    //                      : stub_(DifferentialServer::NewStub(channel)) {}
-    //
-    //      private:
-    //        std::unique_ptr<DifferentialServer::Stub> stub_;
-    //
-    //    int main(...) {
-    //        std::string target_str;    // Establish the gRPC channel with the port number.
-    //        target_str = "0.0.0.0:50053";
-    //
-    //        //Initial the service client instance.
-    //        ServiceClient serviceClient(
-    //        grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
-    //
-    // Declare a method to check the connect between the client and server that send a query and receive a response from server.
-    // This method was call by the stub of DifferentialServer. User's query is passed by "message MsgRequest{ ... }" and
-    // server's response receive from "message MsgReply { ... }"
-    // For example,
-    //    class ServiceClient {
-    //      public:
-    //        std::string GetConnect(const std::string& msg){
-    //          ...
-    //          MsgRequest request;
-    //          request.set_request(msg);
-    //
-    //          MsgReply reply;
-    //
-    //          ClientContext context;
-    //
-    //          Status status = stub_->GetConnect(&context, request, &reply);
-    //          ...
-    //        }
-    //      private:
-    //        std::unique_ptr<DifferentialServer::Stub> stub_;
-    //    }
-    virtual ::grpc::Status GetConnect(::grpc::ServerContext* context, const ::DifferentialService::MsgRequest* request, ::DifferentialService::MsgReply* response);
-    //  // Declare how to compare two user input messages as default by MessageDifferencer::Compare().
-    //  // Users have to structure their message as "message log { ...}" defined below this file.
-    //  // Similar to the previous method this method is called by stub of DifferentialServer and
-    //  // passed "message log{}" and the differential result will output by "message result{}".
-    //  // For example,
-    //  //    class ServiceClient {
-    //  //      public:
-    //  //        std::string DefaultDifferentialService(...){
-    //  //          ...
-    //  //          differentialservice::log log_message;
-    //  //          differentialservice::reslut res;
-    //  //          Status status = stub_->DefaultDifferentialService( ..., log_message, res);
-    //  //          ...
-    //  //        }
-    //  //      private:
-    //  //        std::unique_ptr<DifferentialServer::Stub> stub_;
-    //  //    }
-    //  rpc DefaultDifferentialService (DiffRequest) returns (DiffResponse) {}
-    //
     // Declare a customize differential service
     // 1. Add one/more ignore criteria.
     //    By setting the "ignoreCriteria user_ignore = 5;" in "message log {}",
@@ -410,32 +207,12 @@ class ServerDifferential final {
     virtual ::grpc::Status CompareInputMessages(::grpc::ServerContext* context, const ::DifferentialService::DiffRequest* request, ::DifferentialService::DiffResponse* response);
   };
   template <class BaseClass>
-  class WithAsyncMethod_GetConnect : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithAsyncMethod_GetConnect() {
-      ::grpc::Service::MarkMethodAsync(0);
-    }
-    ~WithAsyncMethod_GetConnect() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status GetConnect(::grpc::ServerContext* /*context*/, const ::DifferentialService::MsgRequest* /*request*/, ::DifferentialService::MsgReply* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    void RequestGetConnect(::grpc::ServerContext* context, ::DifferentialService::MsgRequest* request, ::grpc::ServerAsyncResponseWriter< ::DifferentialService::MsgReply>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
-    }
-  };
-  template <class BaseClass>
   class WithAsyncMethod_CompareInputMessages : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_CompareInputMessages() {
-      ::grpc::Service::MarkMethodAsync(1);
+      ::grpc::Service::MarkMethodAsync(0);
     }
     ~WithAsyncMethod_CompareInputMessages() override {
       BaseClassMustBeDerivedFromService(this);
@@ -446,57 +223,10 @@ class ServerDifferential final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestCompareInputMessages(::grpc::ServerContext* context, ::DifferentialService::DiffRequest* request, ::grpc::ServerAsyncResponseWriter< ::DifferentialService::DiffResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
-  typedef WithAsyncMethod_GetConnect<WithAsyncMethod_CompareInputMessages<Service > > AsyncService;
-  template <class BaseClass>
-  class ExperimentalWithCallbackMethod_GetConnect : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    ExperimentalWithCallbackMethod_GetConnect() {
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      ::grpc::Service::
-    #else
-      ::grpc::Service::experimental().
-    #endif
-        MarkMethodCallback(0,
-          new ::grpc_impl::internal::CallbackUnaryHandler< ::DifferentialService::MsgRequest, ::DifferentialService::MsgReply>(
-            [this](
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-                   ::grpc::CallbackServerContext*
-    #else
-                   ::grpc::experimental::CallbackServerContext*
-    #endif
-                     context, const ::DifferentialService::MsgRequest* request, ::DifferentialService::MsgReply* response) { return this->GetConnect(context, request, response); }));}
-    void SetMessageAllocatorFor_GetConnect(
-        ::grpc::experimental::MessageAllocator< ::DifferentialService::MsgRequest, ::DifferentialService::MsgReply>* allocator) {
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
-    #else
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::experimental().GetHandler(0);
-    #endif
-      static_cast<::grpc_impl::internal::CallbackUnaryHandler< ::DifferentialService::MsgRequest, ::DifferentialService::MsgReply>*>(handler)
-              ->SetMessageAllocator(allocator);
-    }
-    ~ExperimentalWithCallbackMethod_GetConnect() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status GetConnect(::grpc::ServerContext* /*context*/, const ::DifferentialService::MsgRequest* /*request*/, ::DifferentialService::MsgReply* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-    virtual ::grpc::ServerUnaryReactor* GetConnect(
-      ::grpc::CallbackServerContext* /*context*/, const ::DifferentialService::MsgRequest* /*request*/, ::DifferentialService::MsgReply* /*response*/)
-    #else
-    virtual ::grpc::experimental::ServerUnaryReactor* GetConnect(
-      ::grpc::experimental::CallbackServerContext* /*context*/, const ::DifferentialService::MsgRequest* /*request*/, ::DifferentialService::MsgReply* /*response*/)
-    #endif
-      { return nullptr; }
-  };
+  typedef WithAsyncMethod_CompareInputMessages<Service > AsyncService;
   template <class BaseClass>
   class ExperimentalWithCallbackMethod_CompareInputMessages : public BaseClass {
    private:
@@ -508,7 +238,7 @@ class ServerDifferential final {
     #else
       ::grpc::Service::experimental().
     #endif
-        MarkMethodCallback(1,
+        MarkMethodCallback(0,
           new ::grpc_impl::internal::CallbackUnaryHandler< ::DifferentialService::DiffRequest, ::DifferentialService::DiffResponse>(
             [this](
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
@@ -520,9 +250,9 @@ class ServerDifferential final {
     void SetMessageAllocatorFor_CompareInputMessages(
         ::grpc::experimental::MessageAllocator< ::DifferentialService::DiffRequest, ::DifferentialService::DiffResponse>* allocator) {
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
     #else
-      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::experimental().GetHandler(1);
+      ::grpc::internal::MethodHandler* const handler = ::grpc::Service::experimental().GetHandler(0);
     #endif
       static_cast<::grpc_impl::internal::CallbackUnaryHandler< ::DifferentialService::DiffRequest, ::DifferentialService::DiffResponse>*>(handler)
               ->SetMessageAllocator(allocator);
@@ -545,34 +275,17 @@ class ServerDifferential final {
       { return nullptr; }
   };
   #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-  typedef ExperimentalWithCallbackMethod_GetConnect<ExperimentalWithCallbackMethod_CompareInputMessages<Service > > CallbackService;
+  typedef ExperimentalWithCallbackMethod_CompareInputMessages<Service > CallbackService;
   #endif
 
-  typedef ExperimentalWithCallbackMethod_GetConnect<ExperimentalWithCallbackMethod_CompareInputMessages<Service > > ExperimentalCallbackService;
-  template <class BaseClass>
-  class WithGenericMethod_GetConnect : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithGenericMethod_GetConnect() {
-      ::grpc::Service::MarkMethodGeneric(0);
-    }
-    ~WithGenericMethod_GetConnect() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status GetConnect(::grpc::ServerContext* /*context*/, const ::DifferentialService::MsgRequest* /*request*/, ::DifferentialService::MsgReply* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-  };
+  typedef ExperimentalWithCallbackMethod_CompareInputMessages<Service > ExperimentalCallbackService;
   template <class BaseClass>
   class WithGenericMethod_CompareInputMessages : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithGenericMethod_CompareInputMessages() {
-      ::grpc::Service::MarkMethodGeneric(1);
+      ::grpc::Service::MarkMethodGeneric(0);
     }
     ~WithGenericMethod_CompareInputMessages() override {
       BaseClassMustBeDerivedFromService(this);
@@ -584,32 +297,12 @@ class ServerDifferential final {
     }
   };
   template <class BaseClass>
-  class WithRawMethod_GetConnect : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithRawMethod_GetConnect() {
-      ::grpc::Service::MarkMethodRaw(0);
-    }
-    ~WithRawMethod_GetConnect() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status GetConnect(::grpc::ServerContext* /*context*/, const ::DifferentialService::MsgRequest* /*request*/, ::DifferentialService::MsgReply* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    void RequestGetConnect(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
-    }
-  };
-  template <class BaseClass>
   class WithRawMethod_CompareInputMessages : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_CompareInputMessages() {
-      ::grpc::Service::MarkMethodRaw(1);
+      ::grpc::Service::MarkMethodRaw(0);
     }
     ~WithRawMethod_CompareInputMessages() override {
       BaseClassMustBeDerivedFromService(this);
@@ -620,46 +313,8 @@ class ServerDifferential final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     void RequestCompareInputMessages(::grpc::ServerContext* context, ::grpc::ByteBuffer* request, ::grpc::ServerAsyncResponseWriter< ::grpc::ByteBuffer>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
-      ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
+      ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
-  };
-  template <class BaseClass>
-  class ExperimentalWithRawCallbackMethod_GetConnect : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    ExperimentalWithRawCallbackMethod_GetConnect() {
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      ::grpc::Service::
-    #else
-      ::grpc::Service::experimental().
-    #endif
-        MarkMethodRawCallback(0,
-          new ::grpc_impl::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
-            [this](
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-                   ::grpc::CallbackServerContext*
-    #else
-                   ::grpc::experimental::CallbackServerContext*
-    #endif
-                     context, const ::grpc::ByteBuffer* request, ::grpc::ByteBuffer* response) { return this->GetConnect(context, request, response); }));
-    }
-    ~ExperimentalWithRawCallbackMethod_GetConnect() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable synchronous version of this method
-    ::grpc::Status GetConnect(::grpc::ServerContext* /*context*/, const ::DifferentialService::MsgRequest* /*request*/, ::DifferentialService::MsgReply* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-    virtual ::grpc::ServerUnaryReactor* GetConnect(
-      ::grpc::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)
-    #else
-    virtual ::grpc::experimental::ServerUnaryReactor* GetConnect(
-      ::grpc::experimental::CallbackServerContext* /*context*/, const ::grpc::ByteBuffer* /*request*/, ::grpc::ByteBuffer* /*response*/)
-    #endif
-      { return nullptr; }
   };
   template <class BaseClass>
   class ExperimentalWithRawCallbackMethod_CompareInputMessages : public BaseClass {
@@ -672,7 +327,7 @@ class ServerDifferential final {
     #else
       ::grpc::Service::experimental().
     #endif
-        MarkMethodRawCallback(1,
+        MarkMethodRawCallback(0,
           new ::grpc_impl::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
             [this](
     #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
@@ -700,33 +355,20 @@ class ServerDifferential final {
       { return nullptr; }
   };
   template <class BaseClass>
-  class WithStreamedUnaryMethod_GetConnect : public BaseClass {
-   private:
-    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
-   public:
-    WithStreamedUnaryMethod_GetConnect() {
-      ::grpc::Service::MarkMethodStreamed(0,
-        new ::grpc::internal::StreamedUnaryHandler< ::DifferentialService::MsgRequest, ::DifferentialService::MsgReply>(std::bind(&WithStreamedUnaryMethod_GetConnect<BaseClass>::StreamedGetConnect, this, std::placeholders::_1, std::placeholders::_2)));
-    }
-    ~WithStreamedUnaryMethod_GetConnect() override {
-      BaseClassMustBeDerivedFromService(this);
-    }
-    // disable regular version of this method
-    ::grpc::Status GetConnect(::grpc::ServerContext* /*context*/, const ::DifferentialService::MsgRequest* /*request*/, ::DifferentialService::MsgReply* /*response*/) override {
-      abort();
-      return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
-    }
-    // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedGetConnect(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::DifferentialService::MsgRequest,::DifferentialService::MsgReply>* server_unary_streamer) = 0;
-  };
-  template <class BaseClass>
   class WithStreamedUnaryMethod_CompareInputMessages : public BaseClass {
    private:
     void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithStreamedUnaryMethod_CompareInputMessages() {
-      ::grpc::Service::MarkMethodStreamed(1,
-        new ::grpc::internal::StreamedUnaryHandler< ::DifferentialService::DiffRequest, ::DifferentialService::DiffResponse>(std::bind(&WithStreamedUnaryMethod_CompareInputMessages<BaseClass>::StreamedCompareInputMessages, this, std::placeholders::_1, std::placeholders::_2)));
+      ::grpc::Service::MarkMethodStreamed(0,
+        new ::grpc::internal::StreamedUnaryHandler<
+          ::DifferentialService::DiffRequest, ::DifferentialService::DiffResponse>(
+            [this](::grpc_impl::ServerContext* context,
+                   ::grpc_impl::ServerUnaryStreamer<
+                     ::DifferentialService::DiffRequest, ::DifferentialService::DiffResponse>* streamer) {
+                       return this->StreamedCompareInputMessages(context,
+                         streamer);
+                  }));
     }
     ~WithStreamedUnaryMethod_CompareInputMessages() override {
       BaseClassMustBeDerivedFromService(this);
@@ -739,12 +381,10 @@ class ServerDifferential final {
     // replace default version of method with streamed unary
     virtual ::grpc::Status StreamedCompareInputMessages(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::DifferentialService::DiffRequest,::DifferentialService::DiffResponse>* server_unary_streamer) = 0;
   };
-  typedef WithStreamedUnaryMethod_GetConnect<WithStreamedUnaryMethod_CompareInputMessages<Service > > StreamedUnaryService;
+  typedef WithStreamedUnaryMethod_CompareInputMessages<Service > StreamedUnaryService;
   typedef Service SplitStreamedService;
-  typedef WithStreamedUnaryMethod_GetConnect<WithStreamedUnaryMethod_CompareInputMessages<Service > > StreamedService;
+  typedef WithStreamedUnaryMethod_CompareInputMessages<Service > StreamedService;
 };
-// The differential service support two methods to compare two message
-// 1) as default or 2) with customization.
 
 }  // namespace DifferentialService
 

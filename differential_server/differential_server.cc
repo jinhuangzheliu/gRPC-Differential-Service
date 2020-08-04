@@ -183,7 +183,6 @@ second_exam = "Mid-term"; <------ second key
 seconde_score = 91;
 
  */
-
 class KeyComparatorImpl : public MessageDifferencer::MapKeyComparator {
  public:
   /*
@@ -342,12 +341,6 @@ class KeyComparatorImpl : public MessageDifferencer::MapKeyComparator {
 
 class MessageServiceImpl final : public ServerDifferential::Service
 {
-  Status GetConnect(ServerContext* context, const MsgRequest* request, MsgReply* reply) override {
-    std::string prefix("1234");
-    reply->set_reply(prefix + request->request());
-    return Status::OK;
-  }
-
   Status CompareInputMessages(ServerContext* context, const DiffRequest* diff_request, DiffResponse* diff_response) override {
     /*
      * 0) Check the size of the input proto message.
@@ -366,7 +359,6 @@ class MessageServiceImpl final : public ServerDifferential::Service
      * 1) Dynamically re-generate the compared two messages.
      *
      ****************************************************************************/
-
     // Reading the file descriptorProto and their dependency and saving into the descritor pool.
     FileDescriptorProto file_descriptor_proto;
     // The first element is the file descriptor proto.
@@ -384,7 +376,7 @@ class MessageServiceImpl final : public ServerDifferential::Service
     const FileDescriptor* file_descriptor = descriptor_pool.BuildFile(file_descriptor_proto);
 
     // Read the name of the message descriptor
-    std::string name_of_message_descriptor = diff_request->name_of_message_descriptor();
+    std::string name_of_message_descriptor = diff_request->name_of_message();
 
     // Using the name of the message descriptor to generate the message descriptor
     const Descriptor* descriptor = file_descriptor->FindMessageTypeByName(name_of_message_descriptor);

@@ -366,7 +366,7 @@ TEST(DifferentialUnitTest, test_ignore_one_field) {
   std::vector<std::string> fields;
   std::string field_1("DifferentialTest.TestEmployee.fullname");
   fields.push_back(field_1);
-  ClientUtil::IgnoreFields(&diff_request, fields);
+  ClientUtil::SetIgnoreFields(&diff_request, fields);
 
   // Receive the differential response.
   DiffResponse diff_response;
@@ -425,7 +425,7 @@ TEST(DifferentialUnitTest, test_ignore_two_fields) {
   fields.push_back(field_2);
 
   // Add the ignore field to the diff request
-  ClientUtil::IgnoreFields(&diff_request, fields);
+  ClientUtil::SetIgnoreFields(&diff_request, fields);
 
   // Receive the differential response.
   DiffResponse diff_response;
@@ -500,7 +500,7 @@ TEST(DifferentialUnitTest, test_ignore_nested_fields) {
   ignore_fields.push_back(nested_field_2);
 
   // Set the ignore to differential request
-  ClientUtil::IgnoreFields(&diff_request, ignore_fields);
+  ClientUtil::SetIgnoreFields(&diff_request, ignore_fields);
 
   // ********************** Differential Service **********************
   // Receive the differential response.
@@ -565,7 +565,7 @@ TEST(DifferentialUnitTest, test_ignore_nothing) {
   // Leave the ignore_fields as empty.
 
   // Write the ignore to differential request
-  ClientUtil::IgnoreFields(&diff_request, ignore_fields);
+  ClientUtil::SetIgnoreFields(&diff_request, ignore_fields);
 
   // ********************** Differential Service **********************
   // Receive the differential response.
@@ -654,7 +654,7 @@ TEST(DifferentialUnitTest, test_ignore_all_fields) {
   ignore_fields.push_back(nested_field_3);
 
   // Black list criteria will do the ignore
-  ClientUtil::IgnoreFields(&diff_request, ignore_fields);
+  ClientUtil::SetIgnoreFields(&diff_request, ignore_fields);
 
   // ********************** Differential Service **********************
   // Receive the differential response.
@@ -726,7 +726,7 @@ TEST(DifferentialUnitTest, test_compare_one_field) {
   compare_fields.push_back(field_1);
 
   // Set compare field in diff request.
-  ClientUtil::CompareFields(&diff_request, compare_fields);
+  ClientUtil::SetCompareFields(&diff_request, compare_fields);
 
   // ********************** Differential Service **********************
   // Receive the differential response.
@@ -792,7 +792,7 @@ TEST(DifferentialUnitTest, test_compare_more_fields) {
   compare_fields.push_back(field_3);
 
   // White list criteria will do the ignore
-  ClientUtil::CompareFields(&diff_request, compare_fields);
+  ClientUtil::SetCompareFields(&diff_request, compare_fields);
 
   // ********************** Differential Service **********************
   // Receive the differential response.
@@ -865,7 +865,7 @@ TEST(DifferentialUnitTest, test_compare_one_nested_field) {
   compare_fields.push_back(nested_field_1);
 
   // White list criteria will do the ignore
-  ClientUtil::CompareFields(&diff_request, compare_fields);
+  ClientUtil::SetCompareFields(&diff_request, compare_fields);
 
   // ********************** Differential Service **********************
   // Receive the differential response.
@@ -939,7 +939,7 @@ TEST(DifferentialUnitTest, test_compare_more_nested_fields) {
   compare_fields.push_back(nested_field_3);
 
   // White list criteria will do the ignore
-  ClientUtil::CompareFields(&diff_request, compare_fields);
+  ClientUtil::SetCompareFields(&diff_request, compare_fields);
 
   // ********************** Differential Service **********************
   // Receive the differential response.
@@ -1006,7 +1006,7 @@ TEST(DifferentialUnitTest, test_compare_nothing) {
   // Leave the compare fields empty.
 
   // White list criteria will do the ignore
-  ClientUtil::CompareFields(&diff_request, compare_fields);
+  ClientUtil::SetCompareFields(&diff_request, compare_fields);
 
   // ********************** Differential Service **********************
   // Receive the differential response.
@@ -1058,7 +1058,7 @@ TEST(DifferentialUnitTest, test_ignore_field_with_the_suffix_ame) {
 
   //******************** Test Content ****************************************
   std::string regex(".*ame$");
-  ClientUtil::RegexCriteria(&diff_request, regex);
+  ClientUtil::SetRegexCriteria(&diff_request, regex);
 
   // ********************** Differential Service **********************
   // Receive the differential response.
@@ -1122,7 +1122,7 @@ TEST(DifferentialUnitTest, test_ignore_field_with_the_suffix_ame_in_nested_field
 
   //******************** Test Content ****************************************
   std::string regex(".*ame$");
-  ClientUtil::RegexCriteria(&diff_request, regex);
+  ClientUtil::SetRegexCriteria(&diff_request, regex);
 
   // ********************** Differential Service **********************
   // Receive the differential response.
@@ -1194,7 +1194,7 @@ TEST(DifferentialUnitTest, test_ignore_field_with_the_suffix_ress_in_nested_fiel
 
   //******************** Test Content ****************************************
   std::string regex(".*ress$");
-  ClientUtil::RegexCriteria(&diff_request, regex);
+  ClientUtil::SetRegexCriteria(&diff_request, regex);
 
   // ********************** Differential Service **********************
   // Receive the differential response.
@@ -3145,7 +3145,7 @@ TEST(DifferentialUnitTest, test_ignore_and_treatASList) {
   std::vector<std::string> fields;
   std::string field_1("DifferentialTest.TestEmployee.areas");
   fields.push_back(field_1);
-  ClientUtil::IgnoreFields(&diff_request, fields);
+  ClientUtil::SetIgnoreFields(&diff_request, fields);
 
   // Set the field areas as list
   std::string repeated_field = "areas";
@@ -3215,7 +3215,7 @@ TEST(DifferentialUnitTest, test_ignore_and_treatASList_treatASMap) {
   std::string field_2("DifferentialTest.TestEmployee.areas");
   fields.push_back(field_1);
   fields.push_back(field_2);
-  ClientUtil::IgnoreFields(&diff_request, fields);
+  ClientUtil::SetIgnoreFields(&diff_request, fields);
 
   // Set the field areas as list
   std::string repeated_field = "areas";
@@ -3348,7 +3348,7 @@ TEST(DifferentialUnitTest, test_ignore_and_treatASList_treatASMap_fractionAndMar
   ignore_fields.push_back(field_1);
   ignore_fields.push_back(field_2);
   ignore_fields.push_back(field_3);
-  ClientUtil::IgnoreFields(&diff_request, ignore_fields);
+  ClientUtil::SetIgnoreFields(&diff_request, ignore_fields);
 
   // Set the field areas as list
   std::string repeated_field_1("areas");

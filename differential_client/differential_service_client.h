@@ -53,9 +53,6 @@ class DifferentialServiceClient {
 
  private:
   std::unique_ptr<ServerDifferential::Stub> stub_;
-
-  // Initial the connection to the server
-  Status InitializeConnection(const std::string& target_address);
 };
 
 #endif  // DIFFERENTIAL_CLIENT_DIFFERENTIAL_SERVICE_CLIENT_H

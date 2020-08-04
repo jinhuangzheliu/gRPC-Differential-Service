@@ -57,7 +57,7 @@ class ClientUtil {
    * service. [Input Args]: 1) the object of differential request message. 2) a
    * string type vector saving the name of the field. [Return]: void
    */
-  static void IgnoreFields(DiffRequest* diff_request,
+  static void SetIgnoreFields(DiffRequest* diff_request,
                            const std::vector<std::string>& field_list);
 
   /*
@@ -67,7 +67,7 @@ class ClientUtil {
    * void
    */
 
-  static void CompareFields(DiffRequest* diff_request,
+  static void SetCompareFields(DiffRequest* diff_request,
                             const std::vector<std::string>& field_list);
 
   /*
@@ -76,7 +76,7 @@ class ClientUtil {
    *               2) a string type regular expression.
    * [Return]: void
    */
-  static void RegexCriteria(DiffRequest* diff_request,
+  static void SetRegexCriteria(DiffRequest* diff_request,
                             const std::string& regex);
 
   /*
@@ -109,7 +109,7 @@ class ClientUtil {
    * [Return]: void
    */
   static void SetFractionAndMargin(DiffRequest* diff_request,
-                                   const double fraction, const double margin);
+                                   const double& fraction, const double& margin);
 };
 
 #endif  // DIFFERENTIAL_SERVICE_CLIENT_UTIL_H

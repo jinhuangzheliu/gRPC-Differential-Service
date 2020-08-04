@@ -216,27 +216,25 @@ static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] =
 
 const char descriptor_table_protodef_differential_5ftest_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
   "\n\027differential_test.proto\022\020DifferentialT"
-  "est\032\032differential_service.proto\"<\n\007Compa"
-  "ny\022\014\n\004name\030\001 \001(\t\022\022\n\noccupation\030\002 \001(\t\022\017\n\007"
-  "address\030\003 \001(\t\"M\n\rEducationInfo\022\014\n\004name\030\001"
-  " \001(\t\022\016\n\006degree\030\002 \001(\t\022\r\n\005major\030\003 \001(\t\022\017\n\007a"
-  "ddress\030\004 \001(\t\"*\n\rDependentInfo\022\014\n\004name\030\001 "
-  "\003(\t\022\013\n\003age\030\002 \003(\005\"I\n\tExamScore\022\r\n\005exam1\030\001"
-  " \001(\t\022\016\n\006score1\030\002 \001(\005\022\r\n\005exam2\030\003 \001(\t\022\016\n\006s"
-  "core2\030\004 \001(\002\"\217\003\n\014TestEmployee\022\021\n\temploy_i"
-  "d\030\001 \001(\005\022\020\n\010fullname\030\002 \001(\t\022\013\n\003age\030\003 \001(\005\022+"
-  "\n\010employer\030\004 \001(\0132\031.DifferentialTest.Comp"
-  "any\022\r\n\005areas\030\005 \003(\t\0222\n\teducation\030\006 \003(\0132\037."
-  "DifferentialTest.EducationInfo\0223\n\ndepend"
-  "ents\030\007 \001(\0132\037.DifferentialTest.DependentI"
-  "nfo\022\022\n\nfloatpoint\030\010 \001(\001\022/\n\nexam_score\030\t "
-  "\003(\0132\033.DifferentialTest.ExamScore\0226\n\004info"
-  "\030\n \003(\0132(.DifferentialTest.TestEmployee.I"
-  "nfoEntry\032+\n\tInfoEntry\022\013\n\003key\030\001 \001(\t\022\r\n\005va"
-  "lue\030\002 \001(\t:\0028\001b\006proto3"
+  "est\"<\n\007Company\022\014\n\004name\030\001 \001(\t\022\022\n\noccupati"
+  "on\030\002 \001(\t\022\017\n\007address\030\003 \001(\t\"M\n\rEducationIn"
+  "fo\022\014\n\004name\030\001 \001(\t\022\016\n\006degree\030\002 \001(\t\022\r\n\005majo"
+  "r\030\003 \001(\t\022\017\n\007address\030\004 \001(\t\"*\n\rDependentInf"
+  "o\022\014\n\004name\030\001 \003(\t\022\013\n\003age\030\002 \003(\005\"I\n\tExamScor"
+  "e\022\r\n\005exam1\030\001 \001(\t\022\016\n\006score1\030\002 \001(\005\022\r\n\005exam"
+  "2\030\003 \001(\t\022\016\n\006score2\030\004 \001(\002\"\217\003\n\014TestEmployee"
+  "\022\021\n\temploy_id\030\001 \001(\005\022\020\n\010fullname\030\002 \001(\t\022\013\n"
+  "\003age\030\003 \001(\005\022+\n\010employer\030\004 \001(\0132\031.Different"
+  "ialTest.Company\022\r\n\005areas\030\005 \003(\t\0222\n\teducat"
+  "ion\030\006 \003(\0132\037.DifferentialTest.EducationIn"
+  "fo\0223\n\ndependents\030\007 \001(\0132\037.DifferentialTes"
+  "t.DependentInfo\022\022\n\nfloatpoint\030\010 \001(\001\022/\n\ne"
+  "xam_score\030\t \003(\0132\033.DifferentialTest.ExamS"
+  "core\0226\n\004info\030\n \003(\0132(.DifferentialTest.Te"
+  "stEmployee.InfoEntry\032+\n\tInfoEntry\022\013\n\003key"
+  "\030\001 \001(\t\022\r\n\005value\030\002 \001(\t:\0028\001b\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_differential_5ftest_2eproto_deps[1] = {
-  &::descriptor_table_differential_5fservice_2eproto,
 };
 static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_differential_5ftest_2eproto_sccs[6] = {
   &scc_info_Company_differential_5ftest_2eproto.base,
@@ -249,8 +247,8 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_dif
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_differential_5ftest_2eproto_once;
 static bool descriptor_table_differential_5ftest_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_differential_5ftest_2eproto = {
-  &descriptor_table_differential_5ftest_2eproto_initialized, descriptor_table_protodef_differential_5ftest_2eproto, "differential_test.proto", 741,
-  &descriptor_table_differential_5ftest_2eproto_once, descriptor_table_differential_5ftest_2eproto_sccs, descriptor_table_differential_5ftest_2eproto_deps, 6, 1,
+  &descriptor_table_differential_5ftest_2eproto_initialized, descriptor_table_protodef_differential_5ftest_2eproto, "differential_test.proto", 713,
+  &descriptor_table_differential_5ftest_2eproto_once, descriptor_table_differential_5ftest_2eproto_sccs, descriptor_table_differential_5ftest_2eproto_deps, 6, 0,
   schemas, file_default_instances, TableStruct_differential_5ftest_2eproto::offsets,
   file_level_metadata_differential_5ftest_2eproto, 6, file_level_enum_descriptors_differential_5ftest_2eproto, file_level_service_descriptors_differential_5ftest_2eproto,
 };

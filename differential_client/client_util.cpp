@@ -15,12 +15,13 @@ DiffRequest ClientUtil::WriteMsgToDiffRequest(const Message& msg_1,
   std::string serialized_second_string = msg_2.SerializeAsString();
 
   // write the serialize messages to differential request.
-  diff_request.set_first_message(serialized_first_string);
-  diff_request.set_second_message(serialized_second_string);
+  diff_request.set_first_message(std::move(serialized_first_string));
+  diff_request.set_second_message(std::move(serialized_second_string));
 
   // 2) Get the message Descriptor and write the name of descriptor to request.
   const Descriptor* descriptor = msg_1.GetDescriptor();
-  diff_request.set_name_of_message_descriptor(descriptor->name());
+
+  diff_request.set_name_of_message(descriptor->name());
 
   // 3) Get the file descriptor proto of the user message.
   const FileDescriptor* file_descriptor = descriptor->file();
@@ -54,39 +55,39 @@ DiffRequest ClientUtil::WriteMsgToDiffRequest(const Message& msg_1,
   return diff_request;
 }
 
-void ClientUtil::IgnoreFields(DiffRequest* diff_request,
+void ClientUtil::SetIgnoreFields(DiffRequest* diff_request,
                               const std::vector<std::string>& field_list) {
   // Get the IgnoreCriteria that is defined by differential service.
-  DifferentialService::IgnoreCriteria* ignore_criteria_ptr =
+  DifferentialService::IgnoreCriteria* ignore_criteria =
       diff_request->mutable_user_ignore();
 
   // Set the criteria flag (IGNORE)
-  ignore_criteria_ptr->set_flag(
+  ignore_criteria->set_flag(
       DifferentialService::IgnoreCriteria_IgnoreFlag_FLAG_IGNORE);
 
   // Iterate and insert the IGNORE fields to the criteria.
   for (auto& i : field_list) {
-    ignore_criteria_ptr->add_ignore_fields_list(i);
+    ignore_criteria->add_ignore_fields_list(i);
   }
 }
 
-void ClientUtil::CompareFields(DiffRequest* diff_request,
+void ClientUtil::SetCompareFields(DiffRequest* diff_request,
                                const std::vector<std::string>& field_list) {
   // Get the IgnoreCriteria that is defined by differential service.
-  DifferentialService::IgnoreCriteria* ignore_criteria_ptr =
+  DifferentialService::IgnoreCriteria* ignore_criteria =
       diff_request->mutable_user_ignore();
 
   // Set the criteria flag (COMPARE)
-  ignore_criteria_ptr->set_flag(
+  ignore_criteria->set_flag(
       DifferentialService::IgnoreCriteria_IgnoreFlag_FLAG_COMPARE);
 
   // Iterate and insert the COMPARE fields to the criteria.
   for (auto& i : field_list) {
-    ignore_criteria_ptr->add_ignore_fields_list(i);
+    ignore_criteria->add_ignore_fields_list(i);
   }
 }
 
-void ClientUtil::RegexCriteria(DiffRequest* diff_request,
+void ClientUtil::SetRegexCriteria(DiffRequest* diff_request,
                                const std::string& regex) {
   // Get the IgnoreCriteria that is defined by differential service.
   DifferentialService::IgnoreCriteria* ignore_criteria_ptr =
@@ -134,11 +135,11 @@ void ClientUtil::TreatRepeatedFieldAsMap(DiffRequest* diff_request,
 }
 
 void ClientUtil::SetFractionAndMargin(DiffRequest* diff_request,
-                                      const double fraction,
-                                      const double margin) {
+                                      const double& fraction,
+                                      const double& margin) {
   // get the pointer of Float Number Comparison
-  DifferentialService::FloatNumComparison* fracAndMar_ptr =
+  DifferentialService::FloatNumComparison* fraction_margin =
       diff_request->mutable_float_num_comparison();
-  fracAndMar_ptr->set_fraction(fraction);
-  fracAndMar_ptr->set_margin(margin);
+  fraction_margin->set_fraction(fraction);
+  fraction_margin->set_margin(margin);
 }

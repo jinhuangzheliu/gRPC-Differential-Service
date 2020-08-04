@@ -22,7 +22,6 @@
 namespace DifferentialService {
 
 static const char* ServerDifferential_method_names[] = {
-  "/DifferentialService.ServerDifferential/GetConnect",
   "/DifferentialService.ServerDifferential/CompareInputMessages",
 };
 
@@ -33,37 +32,8 @@ std::unique_ptr< ServerDifferential::Stub> ServerDifferential::NewStub(const std
 }
 
 ServerDifferential::Stub::Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel)
-  : channel_(channel), rpcmethod_GetConnect_(ServerDifferential_method_names[0], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
-  , rpcmethod_CompareInputMessages_(ServerDifferential_method_names[1], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
+  : channel_(channel), rpcmethod_CompareInputMessages_(ServerDifferential_method_names[0], ::grpc::internal::RpcMethod::NORMAL_RPC, channel)
   {}
-
-::grpc::Status ServerDifferential::Stub::GetConnect(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest& request, ::DifferentialService::MsgReply* response) {
-  return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_GetConnect_, context, request, response);
-}
-
-void ServerDifferential::Stub::experimental_async::GetConnect(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest* request, ::DifferentialService::MsgReply* response, std::function<void(::grpc::Status)> f) {
-  ::grpc_impl::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_GetConnect_, context, request, response, std::move(f));
-}
-
-void ServerDifferential::Stub::experimental_async::GetConnect(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::DifferentialService::MsgReply* response, std::function<void(::grpc::Status)> f) {
-  ::grpc_impl::internal::CallbackUnaryCall(stub_->channel_.get(), stub_->rpcmethod_GetConnect_, context, request, response, std::move(f));
-}
-
-void ServerDifferential::Stub::experimental_async::GetConnect(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest* request, ::DifferentialService::MsgReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
-  ::grpc_impl::internal::ClientCallbackUnaryFactory::Create(stub_->channel_.get(), stub_->rpcmethod_GetConnect_, context, request, response, reactor);
-}
-
-void ServerDifferential::Stub::experimental_async::GetConnect(::grpc::ClientContext* context, const ::grpc::ByteBuffer* request, ::DifferentialService::MsgReply* response, ::grpc::experimental::ClientUnaryReactor* reactor) {
-  ::grpc_impl::internal::ClientCallbackUnaryFactory::Create(stub_->channel_.get(), stub_->rpcmethod_GetConnect_, context, request, response, reactor);
-}
-
-::grpc::ClientAsyncResponseReader< ::DifferentialService::MsgReply>* ServerDifferential::Stub::AsyncGetConnectRaw(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc_impl::internal::ClientAsyncResponseReaderFactory< ::DifferentialService::MsgReply>::Create(channel_.get(), cq, rpcmethod_GetConnect_, context, request, true);
-}
-
-::grpc::ClientAsyncResponseReader< ::DifferentialService::MsgReply>* ServerDifferential::Stub::PrepareAsyncGetConnectRaw(::grpc::ClientContext* context, const ::DifferentialService::MsgRequest& request, ::grpc::CompletionQueue* cq) {
-  return ::grpc_impl::internal::ClientAsyncResponseReaderFactory< ::DifferentialService::MsgReply>::Create(channel_.get(), cq, rpcmethod_GetConnect_, context, request, false);
-}
 
 ::grpc::Status ServerDifferential::Stub::CompareInputMessages(::grpc::ClientContext* context, const ::DifferentialService::DiffRequest& request, ::DifferentialService::DiffResponse* response) {
   return ::grpc::internal::BlockingUnaryCall(channel_.get(), rpcmethod_CompareInputMessages_, context, request, response);
@@ -97,23 +67,16 @@ ServerDifferential::Service::Service() {
   AddMethod(new ::grpc::internal::RpcServiceMethod(
       ServerDifferential_method_names[0],
       ::grpc::internal::RpcMethod::NORMAL_RPC,
-      new ::grpc::internal::RpcMethodHandler< ServerDifferential::Service, ::DifferentialService::MsgRequest, ::DifferentialService::MsgReply>(
-          std::mem_fn(&ServerDifferential::Service::GetConnect), this)));
-  AddMethod(new ::grpc::internal::RpcServiceMethod(
-      ServerDifferential_method_names[1],
-      ::grpc::internal::RpcMethod::NORMAL_RPC,
       new ::grpc::internal::RpcMethodHandler< ServerDifferential::Service, ::DifferentialService::DiffRequest, ::DifferentialService::DiffResponse>(
-          std::mem_fn(&ServerDifferential::Service::CompareInputMessages), this)));
+          [](ServerDifferential::Service* service,
+             ::grpc_impl::ServerContext* ctx,
+             const ::DifferentialService::DiffRequest* req,
+             ::DifferentialService::DiffResponse* resp) {
+               return service->CompareInputMessages(ctx, req, resp);
+             }, this)));
 }
 
 ServerDifferential::Service::~Service() {
-}
-
-::grpc::Status ServerDifferential::Service::GetConnect(::grpc::ServerContext* context, const ::DifferentialService::MsgRequest* request, ::DifferentialService::MsgReply* response) {
-  (void) context;
-  (void) request;
-  (void) response;
-  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
 }
 
 ::grpc::Status ServerDifferential::Service::CompareInputMessages(::grpc::ServerContext* context, const ::DifferentialService::DiffRequest* request, ::DifferentialService::DiffResponse* response) {

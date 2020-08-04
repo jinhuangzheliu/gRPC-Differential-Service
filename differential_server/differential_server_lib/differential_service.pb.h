@@ -1382,7 +1382,7 @@ class DiffRequest :
     kMapCompareFieldNumber = 7,
     kFirstMessageFieldNumber = 1,
     kSecondMessageFieldNumber = 2,
-    kNameOfMessageDescriptorFieldNumber = 3,
+    kNameOfMessageFieldNumber = 3,
     kUserIgnoreFieldNumber = 5,
     kMapCompareNotSameIndexFieldNumber = 8,
     kFloatNumComparisonFieldNumber = 9,
@@ -1479,20 +1479,20 @@ class DiffRequest :
   std::string* _internal_mutable_second_message();
   public:
 
-  // string name_of_message_descriptor = 3;
-  void clear_name_of_message_descriptor();
-  const std::string& name_of_message_descriptor() const;
-  void set_name_of_message_descriptor(const std::string& value);
-  void set_name_of_message_descriptor(std::string&& value);
-  void set_name_of_message_descriptor(const char* value);
-  void set_name_of_message_descriptor(const char* value, size_t size);
-  std::string* mutable_name_of_message_descriptor();
-  std::string* release_name_of_message_descriptor();
-  void set_allocated_name_of_message_descriptor(std::string* name_of_message_descriptor);
+  // string name_of_message = 3;
+  void clear_name_of_message();
+  const std::string& name_of_message() const;
+  void set_name_of_message(const std::string& value);
+  void set_name_of_message(std::string&& value);
+  void set_name_of_message(const char* value);
+  void set_name_of_message(const char* value, size_t size);
+  std::string* mutable_name_of_message();
+  std::string* release_name_of_message();
+  void set_allocated_name_of_message(std::string* name_of_message);
   private:
-  const std::string& _internal_name_of_message_descriptor() const;
-  void _internal_set_name_of_message_descriptor(const std::string& value);
-  std::string* _internal_mutable_name_of_message_descriptor();
+  const std::string& _internal_name_of_message() const;
+  void _internal_set_name_of_message(const std::string& value);
+  std::string* _internal_mutable_name_of_message();
   public:
 
   // .DifferentialService.IgnoreCriteria user_ignore = 5;
@@ -1550,7 +1550,7 @@ class DiffRequest :
   ::PROTOBUF_NAMESPACE_ID::RepeatedPtrField< ::DifferentialService::MapCompare > map_compare_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr first_message_;
   ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr second_message_;
-  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr name_of_message_descriptor_;
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr name_of_message_;
   ::DifferentialService::IgnoreCriteria* user_ignore_;
   ::DifferentialService::MapCompareNotSameIndex* map_compare_not_same_index_;
   ::DifferentialService::FloatNumComparison* float_num_comparison_;
@@ -2577,64 +2577,64 @@ inline void DiffRequest::set_allocated_second_message(std::string* second_messag
   // @@protoc_insertion_point(field_set_allocated:DifferentialService.DiffRequest.second_message)
 }
 
-// string name_of_message_descriptor = 3;
-inline void DiffRequest::clear_name_of_message_descriptor() {
-  name_of_message_descriptor_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+// string name_of_message = 3;
+inline void DiffRequest::clear_name_of_message() {
+  name_of_message_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
-inline const std::string& DiffRequest::name_of_message_descriptor() const {
-  // @@protoc_insertion_point(field_get:DifferentialService.DiffRequest.name_of_message_descriptor)
-  return _internal_name_of_message_descriptor();
+inline const std::string& DiffRequest::name_of_message() const {
+  // @@protoc_insertion_point(field_get:DifferentialService.DiffRequest.name_of_message)
+  return _internal_name_of_message();
 }
-inline void DiffRequest::set_name_of_message_descriptor(const std::string& value) {
-  _internal_set_name_of_message_descriptor(value);
-  // @@protoc_insertion_point(field_set:DifferentialService.DiffRequest.name_of_message_descriptor)
+inline void DiffRequest::set_name_of_message(const std::string& value) {
+  _internal_set_name_of_message(value);
+  // @@protoc_insertion_point(field_set:DifferentialService.DiffRequest.name_of_message)
 }
-inline std::string* DiffRequest::mutable_name_of_message_descriptor() {
-  // @@protoc_insertion_point(field_mutable:DifferentialService.DiffRequest.name_of_message_descriptor)
-  return _internal_mutable_name_of_message_descriptor();
+inline std::string* DiffRequest::mutable_name_of_message() {
+  // @@protoc_insertion_point(field_mutable:DifferentialService.DiffRequest.name_of_message)
+  return _internal_mutable_name_of_message();
 }
-inline const std::string& DiffRequest::_internal_name_of_message_descriptor() const {
-  return name_of_message_descriptor_.GetNoArena();
+inline const std::string& DiffRequest::_internal_name_of_message() const {
+  return name_of_message_.GetNoArena();
 }
-inline void DiffRequest::_internal_set_name_of_message_descriptor(const std::string& value) {
+inline void DiffRequest::_internal_set_name_of_message(const std::string& value) {
   
-  name_of_message_descriptor_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value);
+  name_of_message_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), value);
 }
-inline void DiffRequest::set_name_of_message_descriptor(std::string&& value) {
+inline void DiffRequest::set_name_of_message(std::string&& value) {
   
-  name_of_message_descriptor_.SetNoArena(
+  name_of_message_.SetNoArena(
     &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::move(value));
-  // @@protoc_insertion_point(field_set_rvalue:DifferentialService.DiffRequest.name_of_message_descriptor)
+  // @@protoc_insertion_point(field_set_rvalue:DifferentialService.DiffRequest.name_of_message)
 }
-inline void DiffRequest::set_name_of_message_descriptor(const char* value) {
+inline void DiffRequest::set_name_of_message(const char* value) {
   GOOGLE_DCHECK(value != nullptr);
   
-  name_of_message_descriptor_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
-  // @@protoc_insertion_point(field_set_char:DifferentialService.DiffRequest.name_of_message_descriptor)
+  name_of_message_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:DifferentialService.DiffRequest.name_of_message)
 }
-inline void DiffRequest::set_name_of_message_descriptor(const char* value, size_t size) {
+inline void DiffRequest::set_name_of_message(const char* value, size_t size) {
   
-  name_of_message_descriptor_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+  name_of_message_.SetNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
       ::std::string(reinterpret_cast<const char*>(value), size));
-  // @@protoc_insertion_point(field_set_pointer:DifferentialService.DiffRequest.name_of_message_descriptor)
+  // @@protoc_insertion_point(field_set_pointer:DifferentialService.DiffRequest.name_of_message)
 }
-inline std::string* DiffRequest::_internal_mutable_name_of_message_descriptor() {
+inline std::string* DiffRequest::_internal_mutable_name_of_message() {
   
-  return name_of_message_descriptor_.MutableNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  return name_of_message_.MutableNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
-inline std::string* DiffRequest::release_name_of_message_descriptor() {
-  // @@protoc_insertion_point(field_release:DifferentialService.DiffRequest.name_of_message_descriptor)
+inline std::string* DiffRequest::release_name_of_message() {
+  // @@protoc_insertion_point(field_release:DifferentialService.DiffRequest.name_of_message)
   
-  return name_of_message_descriptor_.ReleaseNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  return name_of_message_.ReleaseNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
-inline void DiffRequest::set_allocated_name_of_message_descriptor(std::string* name_of_message_descriptor) {
-  if (name_of_message_descriptor != nullptr) {
+inline void DiffRequest::set_allocated_name_of_message(std::string* name_of_message) {
+  if (name_of_message != nullptr) {
     
   } else {
     
   }
-  name_of_message_descriptor_.SetAllocatedNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), name_of_message_descriptor);
-  // @@protoc_insertion_point(field_set_allocated:DifferentialService.DiffRequest.name_of_message_descriptor)
+  name_of_message_.SetAllocatedNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), name_of_message);
+  // @@protoc_insertion_point(field_set_allocated:DifferentialService.DiffRequest.name_of_message)
 }
 
 // repeated bytes file_descriptor_proto = 4;

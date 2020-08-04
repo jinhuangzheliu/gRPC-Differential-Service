@@ -249,7 +249,7 @@ const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_differential_5fservice_2eproto
   ~0u,  // no _weak_field_map_
   PROTOBUF_FIELD_OFFSET(::DifferentialService::DiffRequest, first_message_),
   PROTOBUF_FIELD_OFFSET(::DifferentialService::DiffRequest, second_message_),
-  PROTOBUF_FIELD_OFFSET(::DifferentialService::DiffRequest, name_of_message_descriptor_),
+  PROTOBUF_FIELD_OFFSET(::DifferentialService::DiffRequest, name_of_message_),
   PROTOBUF_FIELD_OFFSET(::DifferentialService::DiffRequest, file_descriptor_proto_),
   PROTOBUF_FIELD_OFFSET(::DifferentialService::DiffRequest, user_ignore_),
   PROTOBUF_FIELD_OFFSET(::DifferentialService::DiffRequest, repeated_field_),
@@ -305,24 +305,22 @@ const char descriptor_table_protodef_differential_5fservice_2eproto[] PROTOBUF_S
   "x\022\026\n\016repeated_field\030\001 \001(\t\022\027\n\017first_key_f"
   "ield\030\002 \001(\t\022\030\n\020second_key_field\030\003 \001(\t\"6\n\022"
   "FloatNumComparison\022\020\n\010fraction\030\001 \001(\001\022\016\n\006"
-  "margin\030\002 \001(\001\"\303\003\n\013DiffRequest\022\025\n\rfirst_me"
-  "ssage\030\001 \001(\014\022\026\n\016second_message\030\002 \001(\014\022\"\n\032n"
-  "ame_of_message_descriptor\030\003 \001(\t\022\035\n\025file_"
-  "descriptor_proto\030\004 \003(\014\0228\n\013user_ignore\030\005 "
-  "\001(\0132#.DifferentialService.IgnoreCriteria"
-  "\022:\n\016repeated_field\030\006 \003(\0132\".DifferentialS"
-  "ervice.RepeatedField\0224\n\013map_compare\030\007 \003("
-  "\0132\037.DifferentialService.MapCompare\022O\n\032ma"
-  "p_compare_not_same_index\030\010 \001(\0132+.Differe"
-  "ntialService.MapCompareNotSameIndex\022E\n\024f"
-  "loat_num_comparison\030\t \001(\0132\'.Differential"
-  "Service.FloatNumComparison\"-\n\014DiffRespon"
-  "se\022\016\n\006result\030\001 \001(\t\022\r\n\005error\030\002 \001(\t2\303\001\n\022Se"
-  "rverDifferential\022N\n\nGetConnect\022\037.Differe"
-  "ntialService.MsgRequest\032\035.DifferentialSe"
-  "rvice.MsgReply\"\000\022]\n\024CompareInputMessages"
-  "\022 .DifferentialService.DiffRequest\032!.Dif"
-  "ferentialService.DiffResponse\"\000b\006proto3"
+  "margin\030\002 \001(\001\"\270\003\n\013DiffRequest\022\025\n\rfirst_me"
+  "ssage\030\001 \001(\014\022\026\n\016second_message\030\002 \001(\014\022\027\n\017n"
+  "ame_of_message\030\003 \001(\t\022\035\n\025file_descriptor_"
+  "proto\030\004 \003(\014\0228\n\013user_ignore\030\005 \001(\0132#.Diffe"
+  "rentialService.IgnoreCriteria\022:\n\016repeate"
+  "d_field\030\006 \003(\0132\".DifferentialService.Repe"
+  "atedField\0224\n\013map_compare\030\007 \003(\0132\037.Differe"
+  "ntialService.MapCompare\022O\n\032map_compare_n"
+  "ot_same_index\030\010 \001(\0132+.DifferentialServic"
+  "e.MapCompareNotSameIndex\022E\n\024float_num_co"
+  "mparison\030\t \001(\0132\'.DifferentialService.Flo"
+  "atNumComparison\"-\n\014DiffResponse\022\016\n\006resul"
+  "t\030\001 \001(\t\022\r\n\005error\030\002 \001(\t2s\n\022ServerDifferen"
+  "tial\022]\n\024CompareInputMessages\022 .Different"
+  "ialService.DiffRequest\032!.DifferentialSer"
+  "vice.DiffResponse\"\000b\006proto3"
   ;
 static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_differential_5fservice_2eproto_deps[1] = {
 };
@@ -340,7 +338,7 @@ static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_dif
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_differential_5fservice_2eproto_once;
 static bool descriptor_table_differential_5fservice_2eproto_initialized = false;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_differential_5fservice_2eproto = {
-  &descriptor_table_differential_5fservice_2eproto_initialized, descriptor_table_protodef_differential_5fservice_2eproto, "differential_service.proto", 1359,
+  &descriptor_table_differential_5fservice_2eproto_initialized, descriptor_table_protodef_differential_5fservice_2eproto, "differential_service.proto", 1267,
   &descriptor_table_differential_5fservice_2eproto_once, descriptor_table_differential_5fservice_2eproto_sccs, descriptor_table_differential_5fservice_2eproto_deps, 9, 0,
   schemas, file_default_instances, TableStruct_differential_5fservice_2eproto::offsets,
   file_level_metadata_differential_5fservice_2eproto, 9, file_level_enum_descriptors_differential_5fservice_2eproto, file_level_service_descriptors_differential_5fservice_2eproto,
@@ -2055,9 +2053,9 @@ DiffRequest::DiffRequest(const DiffRequest& from)
   if (!from._internal_second_message().empty()) {
     second_message_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.second_message_);
   }
-  name_of_message_descriptor_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  if (!from._internal_name_of_message_descriptor().empty()) {
-    name_of_message_descriptor_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.name_of_message_descriptor_);
+  name_of_message_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  if (!from._internal_name_of_message().empty()) {
+    name_of_message_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.name_of_message_);
   }
   if (from._internal_has_user_ignore()) {
     user_ignore_ = new ::DifferentialService::IgnoreCriteria(*from.user_ignore_);
@@ -2081,7 +2079,7 @@ void DiffRequest::SharedCtor() {
   ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_DiffRequest_differential_5fservice_2eproto.base);
   first_message_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   second_message_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  name_of_message_descriptor_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  name_of_message_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   ::memset(&user_ignore_, 0, static_cast<size_t>(
       reinterpret_cast<char*>(&float_num_comparison_) -
       reinterpret_cast<char*>(&user_ignore_)) + sizeof(float_num_comparison_));
@@ -2095,7 +2093,7 @@ DiffRequest::~DiffRequest() {
 void DiffRequest::SharedDtor() {
   first_message_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   second_message_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  name_of_message_descriptor_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  name_of_message_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete user_ignore_;
   if (this != internal_default_instance()) delete map_compare_not_same_index_;
   if (this != internal_default_instance()) delete float_num_comparison_;
@@ -2121,7 +2119,7 @@ void DiffRequest::Clear() {
   map_compare_.Clear();
   first_message_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   second_message_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  name_of_message_descriptor_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  name_of_message_.ClearToEmptyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (GetArenaNoVirtual() == nullptr && user_ignore_ != nullptr) {
     delete user_ignore_;
   }
@@ -2160,12 +2158,12 @@ const char* DiffRequest::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
-      // string name_of_message_descriptor = 3;
+      // string name_of_message = 3;
       case 3:
         if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
-          auto str = _internal_mutable_name_of_message_descriptor();
+          auto str = _internal_mutable_name_of_message();
           ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          CHK_(::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "DifferentialService.DiffRequest.name_of_message_descriptor"));
+          CHK_(::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "DifferentialService.DiffRequest.name_of_message"));
           CHK_(ptr);
         } else goto handle_unusual;
         continue;
@@ -2265,14 +2263,14 @@ failure:
         2, this->_internal_second_message(), target);
   }
 
-  // string name_of_message_descriptor = 3;
-  if (this->name_of_message_descriptor().size() > 0) {
+  // string name_of_message = 3;
+  if (this->name_of_message().size() > 0) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
-      this->_internal_name_of_message_descriptor().data(), static_cast<int>(this->_internal_name_of_message_descriptor().length()),
+      this->_internal_name_of_message().data(), static_cast<int>(this->_internal_name_of_message().length()),
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE,
-      "DifferentialService.DiffRequest.name_of_message_descriptor");
+      "DifferentialService.DiffRequest.name_of_message");
     target = stream->WriteStringMaybeAliased(
-        3, this->_internal_name_of_message_descriptor(), target);
+        3, this->_internal_name_of_message(), target);
   }
 
   // repeated bytes file_descriptor_proto = 4;
@@ -2373,11 +2371,11 @@ size_t DiffRequest::ByteSizeLong() const {
         this->_internal_second_message());
   }
 
-  // string name_of_message_descriptor = 3;
-  if (this->name_of_message_descriptor().size() > 0) {
+  // string name_of_message = 3;
+  if (this->name_of_message().size() > 0) {
     total_size += 1 +
       ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_name_of_message_descriptor());
+        this->_internal_name_of_message());
   }
 
   // .DifferentialService.IgnoreCriteria user_ignore = 5;
@@ -2443,9 +2441,9 @@ void DiffRequest::MergeFrom(const DiffRequest& from) {
 
     second_message_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.second_message_);
   }
-  if (from.name_of_message_descriptor().size() > 0) {
+  if (from.name_of_message().size() > 0) {
 
-    name_of_message_descriptor_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.name_of_message_descriptor_);
+    name_of_message_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.name_of_message_);
   }
   if (from.has_user_ignore()) {
     _internal_mutable_user_ignore()->::DifferentialService::IgnoreCriteria::MergeFrom(from._internal_user_ignore());
@@ -2486,7 +2484,7 @@ void DiffRequest::InternalSwap(DiffRequest* other) {
     GetArenaNoVirtual());
   second_message_.Swap(&other->second_message_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
     GetArenaNoVirtual());
-  name_of_message_descriptor_.Swap(&other->name_of_message_descriptor_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+  name_of_message_.Swap(&other->name_of_message_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
     GetArenaNoVirtual());
   swap(user_ignore_, other->user_ignore_);
   swap(map_compare_not_same_index_, other->map_compare_not_same_index_);

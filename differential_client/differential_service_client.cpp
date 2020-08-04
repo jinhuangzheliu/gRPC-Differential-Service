@@ -5,40 +5,9 @@
 
 DifferentialServiceClient::DifferentialServiceClient() {}
 
-Status DifferentialServiceClient::InitializeConnection(const std::string& connection_address) {
-  // Create the channel by target address.
-  const std::shared_ptr<Channel>& channel =
-      grpc::CreateChannel(connection_address, grpc::InsecureChannelCredentials());
-
-  // Create a new Server stub by the channel.
-  stub_ = ServerDifferential::NewStub(channel);
-
-  // Check the connection with Server.
-  // 1) Create a request.
-  MsgRequest request;
-
-  // 2) create container for the data we expect from the server.
-  MsgReply reply;
-
-  // 3) Context for the client.
-  ClientContext context;
-
-  // 4) The actual RPC.
-  Status status = stub_->GetConnect(&context, request, &reply);
-
-  // 5) Act upon its status.
-  return status;
-}
-
 StatusCode DifferentialServiceClient::CompareInputMessages(const DiffRequest& diff_request,
                                                            DiffResponse* diff_response,
                                                            const std::string& target_address) {
-  // Initial the gRPC connection and check the status of the connection.
-  Status initial_status = this->InitializeConnection(target_address);
-  if (!initial_status.ok()){
-    return initial_status.error_code();
-  }
-
   // Set size limitation of the proto message
   size_t proto_max_size = 4194304;
   // Get the actual size of the proto message
@@ -47,6 +16,13 @@ StatusCode DifferentialServiceClient::CompareInputMessages(const DiffRequest& di
   if (proto_size > proto_max_size) {
     return StatusCode::INVALID_ARGUMENT;
   }
+
+  // Create the channel by target address.
+  const std::shared_ptr<Channel>& channel =
+      grpc::CreateChannel(target_address, grpc::InsecureChannelCredentials());
+
+  // Create a new Server stub by the channel.
+  stub_ = ServerDifferential::NewStub(channel);
 
   // ClientContext define by gRPC.
   ClientContext context;
