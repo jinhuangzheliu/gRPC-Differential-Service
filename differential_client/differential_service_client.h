@@ -21,6 +21,7 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
+using grpc::StatusCode;
 
 // using namespace from the differential service .proto file
 using DifferentialService::ServerDifferential;
@@ -35,22 +36,26 @@ class DifferentialServiceClient {
   // Constructor for client derived from the stub of ServerDifferential
   explicit DifferentialServiceClient();
 
-  // Initial the connection to the server
-  bool InitializeConnection();
-
   /*
    * Differential service. User can set their criteria to
    *                       1) Ignore specific fields,
    *                       2) Treat repeated field as list, set, or map.
    *                       3) set fraction or margin for double number.
-   * [Input Args]: the object of differential request message.
-   * [Return]: the object of differential reply message.
+   * [Input Args]:
+   * diff_request: the object of differential request message.
+   * diff_response: the pointer of the differential response message.
+   * target_address: the address of gRPC service.
+   * [Return]: StatusCode of the gRPC response.
    */
-  DiffResponse CompareInputMessages(const DiffRequest& diff_request);
+  StatusCode CompareInputMessages(const DiffRequest& diff_request,
+                                  DiffResponse* diff_response,
+                                  const std::string& target_address);
 
  private:
   std::unique_ptr<ServerDifferential::Stub> stub_;
-//  std::string target_address;
+
+  // Initial the connection to the server
+  Status InitializeConnection(const std::string& target_address);
 };
 
 #endif  // DIFFERENTIAL_CLIENT_DIFFERENTIAL_SERVICE_CLIENT_H
