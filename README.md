@@ -1,7 +1,7 @@
 # gRPC-Differential-Service
 This service supports a differential service. It enable to differentiate the differences between paired protocol buffer messages. This service has great potential use cases in debugging, testing, or monitoring software systems for finding the abnormal behaviors of a software system. The service is based on gRPC framework and MessageDifferencer libraries. 
 
-# Design Doc.
+## Design Doc.
 [Design Doc: gRPC Differential Service](https://docs.google.com/document/d/1ZZlexpUGawJLMM25QpID0WkabGX38aXkozvhB42FBn8/edit?usp=sharing "Design Doc: gRPC Differential Service")
 
 ## Prerequisites
